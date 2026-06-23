@@ -9,7 +9,7 @@ import { useState, useMemo } from "react";
 import { useAppStore } from "@/store/appStore";
 import {
   ArrowUpRight, CheckCircle2, MapPin, Truck, Clock,
-  ChevronRight, Filter, X, AlertTriangle, XCircle, RotateCcw
+  ChevronRight, AlertTriangle, XCircle, RotateCcw
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip,
@@ -96,7 +96,6 @@ export default function DashboardPage() {
   // Lit les donnees depuis le store global
   const { colis, solde, transactions } = useAppStore();
 
-  const [filterOpen, setFilterOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState("tous");
 
   // Filtre les colis et affiche les 5 plus recents
@@ -198,39 +197,28 @@ export default function DashboardPage() {
 
       <section aria-label="Colis recents">
         <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: C.white, border: `1px solid ${C.border}` }}>
-          <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: `1px solid ${C.border}` }}>
-            <h2 style={{ fontFamily: "var(--font-heading)", fontSize: "15px", fontWeight: 700, color: C.anthracite }}>Colis recents</h2>
-            <div className="flex items-center gap-2 relative">
-              {/* Overlay transparent qui ferme le filtre quand on tape en dehors */}
-              {filterOpen && <div className="fixed inset-0 z-[55]" onClick={() => setFilterOpen(false)} />}
-              <button onClick={() => setFilterOpen(!filterOpen)} className="flex items-center gap-1.5 rounded-lg" style={{
-                fontSize: "12px", color: activeFilter !== "tous" ? C.emerald : C.taupe, padding: "7px 12px",
-                backgroundColor: activeFilter !== "tous" ? C.emeraldSoft : C.sage,
-                border: `1px solid ${activeFilter !== "tous" ? C.emerald : C.border}`, fontWeight: 500, cursor: "pointer",
-              }}>
-                <Filter size={13} strokeWidth={2} />
-                {activeFilter !== "tous" ? FILTER_OPTIONS.find(f => f.value === activeFilter)?.label : "Filtrer"}
-                {activeFilter !== "tous" && (
-                  <span onClick={(e) => { e.stopPropagation(); setActiveFilter("tous"); setFilterOpen(false); }} style={{ marginLeft: "4px", cursor: "pointer" }}><X size={12} /></span>
-                )}
-              </button>
-              {filterOpen && (
-                <div className="absolute right-0 top-full mt-1 rounded-xl shadow-lg z-[60]" style={{ backgroundColor: C.white, border: `1px solid ${C.border}`, overflow: "hidden", minWidth: "150px" }}>
-                  {FILTER_OPTIONS.map((opt) => (
-                    <button key={opt.value} onClick={() => { setActiveFilter(opt.value); setFilterOpen(false); }}
-                      className="w-full text-left px-4 py-2.5 transition-colors" style={{
-                        fontSize: "13px", color: activeFilter === opt.value ? C.emerald : C.anthracite,
-                        fontWeight: activeFilter === opt.value ? 600 : 400,
-                        backgroundColor: activeFilter === opt.value ? C.emeraldSoft : "transparent",
-                        border: "none", cursor: "pointer", borderBottom: `1px solid ${C.border}`,
-                      }}
-                      onMouseEnter={(e) => { if (activeFilter !== opt.value) e.currentTarget.style.backgroundColor = C.sage; }}
-                      onMouseLeave={(e) => { if (activeFilter !== opt.value) e.currentTarget.style.backgroundColor = "transparent"; }}>
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              )}
+          <div className="px-5 py-4" style={{ borderBottom: `1px solid ${C.border}` }}>
+            <h2 style={{ fontFamily: "var(--font-heading)", fontSize: "15px", fontWeight: 700, color: C.anthracite, marginBottom: "12px" }}>Colis recents</h2>
+            <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+              {FILTER_OPTIONS.map((opt) => {
+                const active = activeFilter === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    onClick={() => setActiveFilter(opt.value)}
+                    className="flex-shrink-0 rounded-full"
+                    style={{
+                      padding: "6px 16px", fontSize: "12px", cursor: "pointer",
+                      fontFamily: "var(--font-heading)", fontWeight: active ? 700 : 500,
+                      color: active ? C.white : C.taupe,
+                      backgroundColor: active ? C.emerald : C.sage,
+                      border: `1px solid ${active ? C.emerald : C.border}`,
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
