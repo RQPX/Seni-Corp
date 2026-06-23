@@ -15,9 +15,9 @@ const C = {
   border: "#EAE3D5", white: "#FFFFFF",
 };
 
-// Fallback demo quand l'API n'est pas encore démarrée (retiré en production)
-const DEMO_EMAIL    = process.env.NEXT_PUBLIC_DEMO_EMAIL    ?? "";
-const DEMO_PASSWORD = process.env.NEXT_PUBLIC_DEMO_PASSWORD ?? "";
+// Identifiants de demonstration (utilises tant que l'API backend n'est pas deployee)
+const DEMO_EMAIL    = process.env.NEXT_PUBLIC_DEMO_EMAIL    ?? "demo@senicorp.ci";
+const DEMO_PASSWORD = process.env.NEXT_PUBLIC_DEMO_PASSWORD ?? "SeniDemo2026";
 
 function getPasswordStrength(pwd: string): 0 | 1 | 2 {
   if (pwd.length < 6) return 0;
