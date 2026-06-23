@@ -91,6 +91,8 @@ html {
 body {
   min-height: 100vh;
   min-height: 100dvh; /* dvh pour les navigateurs mobiles modernes */
+  /* Empeche le scroll au-dela du contenu (effet elastique iOS/Android) */
+  overscroll-behavior: none;
 }
 
 
