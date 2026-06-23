@@ -44,7 +44,7 @@ export default function LoginPage() {
   const strengthLabel = ["Faible", "Moyen", "Fort"][strength];
   const strengthColor = [C.terra, C.bronze, C.success][strength] as string;
 
-  const handleSubmit = async (e: React.FormEvent) => {
+const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setInfoMsg("");
@@ -55,19 +55,22 @@ export default function LoginPage() {
     }
 
     setLoading(true);
+
+    // Verifier les identifiants demo en premier (avant l'appel API)
+    if (email === DEMO_EMAIL && password === DEMO_PASSWORD) {
+      setTimeout(() => router.push("/dashboard"), 500);
+      return;
+    }
+
     try {
       await login(email, password);
       router.push("/dashboard");
     } catch {
-      // Fallback demo si l'API n'est pas encore démarrée
-      if (DEMO_EMAIL && DEMO_PASSWORD && email === DEMO_EMAIL && password === DEMO_PASSWORD) {
-        setTimeout(() => router.push("/dashboard"), 500);
-      } else {
-        setLoading(false);
-        setError("Email ou mot de passe incorrect.");
-      }
+      setLoading(false);
+      setError("Email ou mot de passe incorrect.");
     }
   };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-8" style={{ backgroundColor: C.ivory }}>
