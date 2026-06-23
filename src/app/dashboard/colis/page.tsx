@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAppStore, type ColisItem } from "@/store/appStore";
 import {
@@ -63,7 +63,8 @@ function exportCSV(data: ColisItem[]) {
 
 const PER_PAGE = 10;
 
-export default function ColisPage() {
+// Composant interne isole pour useSearchParams (requis par Next.js 15 + Suspense)
+function ColisPageInner() {
   // Lit la liste des colis depuis le store global (mis a jour apres chaque creation)
   const { colis } = useAppStore();
 
@@ -264,5 +265,14 @@ export default function ColisPage() {
       )}
       <div className="h-8" />
     </div>
+  );
+}
+
+// Suspense requis par Next.js 15 pour tout composant utilisant useSearchParams
+export default function ColisPage() {
+  return (
+    <Suspense fallback={<div className="px-4 py-8 text-center" style={{ color: "#6B6259" }}>Chargement...</div>}>
+      <ColisPageInner />
+    </Suspense>
   );
 }
