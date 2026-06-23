@@ -201,6 +201,8 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: `1px solid ${C.border}` }}>
             <h2 style={{ fontFamily: "var(--font-heading)", fontSize: "15px", fontWeight: 700, color: C.anthracite }}>Colis recents</h2>
             <div className="flex items-center gap-2 relative">
+              {/* Overlay transparent qui ferme le filtre quand on tape en dehors */}
+              {filterOpen && <div className="fixed inset-0 z-[55]" onClick={() => setFilterOpen(false)} />}
               <button onClick={() => setFilterOpen(!filterOpen)} className="flex items-center gap-1.5 rounded-lg" style={{
                 fontSize: "12px", color: activeFilter !== "tous" ? C.emerald : C.taupe, padding: "7px 12px",
                 backgroundColor: activeFilter !== "tous" ? C.emeraldSoft : C.sage,
