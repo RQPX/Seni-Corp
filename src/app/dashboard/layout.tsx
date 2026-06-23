@@ -211,34 +211,45 @@ function TopBar({ onMenuOpen }: { onMenuOpen: () => void }) {
   );
 }
 
-// Barre de navigation fixe en bas, visible uniquement sur mobile
+// Barre collée en bas de l'écran (position fixed), uniquement sur mobile
 function BottomNav() {
   const pathname = usePathname();
   const items = [
-    { href: "/dashboard",         label: "Accueil",  icon: LayoutDashboard },
-    { href: "/dashboard/colis",   label: "Colis",    icon: Package },
-    { href: "/dashboard/nouveau", label: "Nouveau",  icon: PlusCircle },
-    { href: "/dashboard/paiements", label: "Paiements", icon: CreditCard },
-    { href: "/dashboard/parametres", label: "Compte",  icon: Settings },
+    { href: "/dashboard",            label: "Accueil",   icon: LayoutDashboard },
+    { href: "/dashboard/colis",      label: "Colis",     icon: Package },
+    { href: "/dashboard/nouveau",    label: "Nouveau",   icon: PlusCircle },
+    { href: "/dashboard/paiements",  label: "Paiements", icon: CreditCard },
+    { href: "/dashboard/parametres", label: "Compte",    icon: Settings },
   ];
   return (
-    <nav aria-label="Navigation mobile" className="md:hidden flex items-center border-t" style={{ backgroundColor: C.white, borderColor: C.border, height: "60px" }}>
+    <nav aria-label="Navigation mobile"
+      className="md:hidden flex items-center"
+      style={{
+        position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50,
+        backgroundColor: C.white, borderTop: `1px solid ${C.border}`,
+        height: "60px",
+        // Safe area iPhone (encoche bas)
+        paddingBottom: "env(safe-area-inset-bottom)",
+      }}>
       {items.map((item) => {
         const isActive = pathname === item.href;
         const Icon = item.icon;
         const isNew = item.href === "/dashboard/nouveau";
         return (
-          <Link key={item.href} href={item.href} className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2"
-            style={{ color: isActive ? C.emerald : C.taupeLight, textDecoration: "none", position: "relative" }}>
+          <Link key={item.href} href={item.href}
+            className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2"
+            style={{ color: isActive ? C.emerald : C.taupeLight, textDecoration: "none" }}>
             {isNew ? (
-              // Bouton "Nouveau" mis en avant avec fond vert
-              <span className="flex items-center justify-center rounded-full" style={{ width: "36px", height: "36px", backgroundColor: C.emerald, color: C.white, marginTop: "-14px", boxShadow: "0 2px 8px rgba(11,77,63,0.4)" }}>
+              <span className="flex items-center justify-center rounded-full"
+                style={{ width: "36px", height: "36px", backgroundColor: C.emerald, color: C.white, marginTop: "-14px", boxShadow: "0 2px 8px rgba(11,77,63,0.4)" }}>
                 <Icon size={18} strokeWidth={2} />
               </span>
             ) : (
               <Icon size={20} strokeWidth={isActive ? 2.2 : 1.8} />
             )}
-            <span style={{ fontSize: "9px", fontFamily: "var(--font-heading)", fontWeight: isActive ? 700 : 500, marginTop: isNew ? "2px" : "0" }}>{item.label}</span>
+            <span style={{ fontSize: "9px", fontFamily: "var(--font-heading)", fontWeight: isActive ? 700 : 500, marginTop: isNew ? "2px" : "0" }}>
+              {item.label}
+            </span>
           </Link>
         );
       })}
@@ -259,10 +270,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopBar onMenuOpen={() => setSidebarOpen(true)} />
-        {/* pb-[60px] sur mobile pour ne pas etre cache par la BottomNav */}
-        <main className="flex-1 overflow-y-auto pb-[60px] md:pb-0">{children}</main>
-        <BottomNav />
+        {/* pb-[60px] sur mobile : evite que le contenu soit cache sous la BottomNav fixe */}
+        <main className="flex-1 overflow-y-auto overscroll-none pb-[60px] md:pb-0">{children}</main>
       </div>
+      {/* BottomNav en position fixed — rendu en dehors du flux pour coller au bas du viewport */}
+      <BottomNav />
     </div>
   );
 }
