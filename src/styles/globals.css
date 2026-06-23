@@ -1,0 +1,231 @@
+/* ============================================================
+   SENI CORP — Styles globaux
+   Charge les polices, definit les variables CSS, et pose
+   les bases d'une interface accessible et coherente.
+   ============================================================ */
+
+/* -- Polices Google Fonts -- */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* -- Tailwind layers -- */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+/* ============================================================
+   Variables CSS — utilisables partout avec var(--nom)
+   Utile pour les composants qui ne passent pas par Tailwind
+   ============================================================ */
+:root {
+  /* Palette */
+  --color-emerald:       #0B4D3F;
+  --color-emerald-dark:  #083528;
+  --color-emerald-light: #1A6B58;
+  --color-emerald-soft:  #E8F0ED;
+
+  --color-bronze:        #B8935A;
+  --color-bronze-light:  #D4B486;
+  --color-bronze-soft:   #F5EFE3;
+
+  --color-ivory:         #FAF6F0;
+  --color-sage:          #E8EDE5;
+  --color-sage-dark:     #D9E0D4;
+
+  --color-anthracite:    #1A1A1A;
+  --color-taupe:         #6B6259;
+  --color-taupe-light:   #9B8A7E;
+
+  --color-terra:         #C66D4F;
+  --color-terra-soft:    #FCEEE9;
+
+  --color-border:        #EAE3D5;
+  --color-border-strong: #D9D2C5;
+
+  --color-success:       #4A6B5C;
+  --color-warning:       #B88838;
+  --color-error:         #A04A3C;
+
+  /* Polices */
+  --font-heading: 'Manrope', sans-serif;
+  --font-body:    'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono:    'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Sidebar */
+  --sidebar-width: 256px;
+
+  /* Transitions */
+  --transition-fast:   150ms ease-out;
+  --transition-normal: 200ms ease-out;
+  --transition-slow:   300ms ease-out;
+}
+
+
+/* ============================================================
+   Reset et base
+   ============================================================ */
+
+/* Tous les elements utilisent border-box */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Police de base et fond ivoire */
+html {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--color-anthracite);
+  background-color: var(--color-ivory);
+
+  /* Lissage du texte sur tous les navigateurs */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Hauteur minimale plein ecran */
+body {
+  min-height: 100vh;
+  min-height: 100dvh; /* dvh pour les navigateurs mobiles modernes */
+}
+
+
+/* ============================================================
+   Accessibilite
+   ============================================================ */
+
+/* Anneau de focus visible au clavier (pas au clic souris) */
+:focus-visible {
+  outline: 2px solid var(--color-bronze);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Masque l'outline sur les clics souris */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Texte invisible mais lisible par les lecteurs d'ecran */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Respect de la preference "mouvement reduit" */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+
+/* ============================================================
+   Scrollbar personnalisee — coherente avec la charte
+   ============================================================ */
+
+/* Webkit (Chrome, Edge, Safari) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-ivory);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-taupe-light);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) var(--color-ivory);
+}
+
+
+/* ============================================================
+   Typographie de base
+   ============================================================ */
+
+/* Titres en Manrope */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  color: var(--color-anthracite);
+  line-height: 1.25;
+}
+
+h1 { font-size: 28px; }
+h2 { font-size: 22px; }
+h3 { font-size: 18px; }
+h4 { font-size: 15px; }
+
+/* Paragraphes avec espacement */
+p {
+  margin-bottom: 0.75em;
+  line-height: 1.65;
+}
+
+/* Liens */
+a {
+  color: var(--color-emerald);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--color-emerald-light);
+}
+
+/* Texte monospace pour les codes techniques */
+code,
+.tracking-number {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+
+/* ============================================================
+   Composants de base (classes utilitaires complementaires)
+   ============================================================ */
+
+/* Fond de carte standard */
+.card {
+  background-color: white;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  transition: box-shadow var(--transition-normal);
+}
+
+/* Hover sur les cartes cliquables */
+.card-interactive:hover {
+  box-shadow: 0 4px 12px rgba(11, 77, 63, 0.08);
+}
+
+/* Cible tactile minimum 44px pour l'accessibilite mobile */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
