@@ -81,18 +81,21 @@ html {
   line-height: 1.6;
   color: var(--color-anthracite);
   background-color: var(--color-ivory);
-
-  /* Lissage du texte sur tous les navigateurs */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Empeche le scroll horizontal et le debordement vers la droite */
+  overflow-x: hidden;
+  max-width: 100vw;
 }
 
 /* Hauteur minimale plein ecran */
 body {
   min-height: 100vh;
-  min-height: 100dvh; /* dvh pour les navigateurs mobiles modernes */
-  /* Empeche le scroll au-dela du contenu (effet elastique iOS/Android) */
+  min-height: 100dvh;
   overscroll-behavior: none;
+  /* Empeche le scroll horizontal sur mobile */
+  overflow-x: hidden;
+  max-width: 100vw;
 }
 
 
