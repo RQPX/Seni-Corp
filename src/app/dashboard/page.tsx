@@ -213,7 +213,7 @@ export default function DashboardPage() {
                 )}
               </button>
               {filterOpen && (
-                <div className="absolute right-0 top-full mt-1 rounded-xl shadow-lg z-10" style={{ backgroundColor: C.white, border: `1px solid ${C.border}`, overflow: "hidden", minWidth: "150px" }}>
+                <div className="absolute right-0 bottom-full mb-1 rounded-xl shadow-lg z-[60]" style={{ backgroundColor: C.white, border: `1px solid ${C.border}`, overflow: "hidden", minWidth: "150px" }}>
                   {FILTER_OPTIONS.map((opt) => (
                     <button key={opt.value} onClick={() => { setActiveFilter(opt.value); setFilterOpen(false); }}
                       className="w-full text-left px-4 py-2.5 transition-colors" style={{
