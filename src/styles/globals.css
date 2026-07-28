@@ -1,24 +1,27 @@
 /* ============================================================
    SENI CORP — Styles globaux
-   Charge les polices, definit les variables CSS, et pose
-   les bases d'une interface accessible et coherente.
+   Ce fichier definit :
+   - Les polices utilisees partout
+   - Les couleurs de la marque (variables reutilisables)
+   - Les regles pour que le site s'affiche bien sur mobile ET desktop
+   - L'accessibilite (focus visible, mouvement reduit, cible tactile)
    ============================================================ */
 
-/* -- Polices Google Fonts -- */
+/* -- Polices Google Fonts (chargees en une seule requete) -- */
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
-/* -- Tailwind layers -- */
+/* -- Tailwind layers (base + composants + utilitaires) -- */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 
 /* ============================================================
-   Variables CSS — utilisables partout avec var(--nom)
-   Utile pour les composants qui ne passent pas par Tailwind
+   Variables CSS — accessibles partout via var(--nom)
+   Utile pour les composants qui n'utilisent pas Tailwind
    ============================================================ */
 :root {
-  /* Palette */
+  /* Palette de couleurs SENI CORP */
   --color-emerald:       #0B4D3F;
   --color-emerald-dark:  #083528;
   --color-emerald-light: #1A6B58;
@@ -46,26 +49,29 @@
   --color-warning:       #B88838;
   --color-error:         #A04A3C;
 
-  /* Polices */
+  /* Polices de la marque */
   --font-heading: 'Manrope', sans-serif;
   --font-body:    'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono:    'JetBrains Mono', 'Fira Code', monospace;
 
-  /* Sidebar */
+  /* Largeur de la sidebar (utilisee dans le layout dashboard) */
   --sidebar-width: 256px;
 
-  /* Transitions */
+  /* Vitesses de transition partout coherentes */
   --transition-fast:   150ms ease-out;
   --transition-normal: 200ms ease-out;
   --transition-slow:   300ms ease-out;
+
+  /* Hauteur de la barre du bas sur mobile (BottomNav) */
+  --bottom-nav-height: 60px;
 }
 
 
 /* ============================================================
-   Reset et base
+   RESET — remise a zero coherente pour tous les navigateurs
    ============================================================ */
 
-/* Tous les elements utilisent border-box */
+/* Tous les elements calculent leur taille en incluant bordure + padding */
 *,
 *::before,
 *::after {
@@ -74,48 +80,90 @@
   padding: 0;
 }
 
-/* Police de base et fond ivoire */
+
+/* ============================================================
+   REGLES ANTI-DEBORDEMENT MOBILE
+   C'est la cle du fix : sur mobile, on force la largeur maximum
+   pour que le contenu ne pousse jamais le viewport vers la droite
+   ============================================================ */
+
 html {
   font-family: var(--font-body);
   font-size: 14px;
   line-height: 1.6;
   color: var(--color-anthracite);
   background-color: var(--color-ivory);
+
+  /* Ameliore le rendu des polices sur Mac / iOS */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  /* Empeche le scroll horizontal et le debordement vers la droite */
+
+  /* -- Anti-debordement horizontal -- */
+  /* Empeche tout scroll a droite / gauche au niveau racine */
   overflow-x: hidden;
   max-width: 100vw;
+  width: 100%;
+
+  /* Empeche le zoom involontaire sur iOS quand on tourne le telephone */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
-/* Hauteur minimale plein ecran */
 body {
   min-height: 100vh;
+  /* dvh = dynamic viewport height, s'adapte a la barre d'URL mobile */
   min-height: 100dvh;
-  overscroll-behavior: none;
-  /* Empeche le scroll horizontal sur mobile */
+
+  /* -- Anti-debordement horizontal (double garantie) -- */
   overflow-x: hidden;
   max-width: 100vw;
+  width: 100%;
+
+  /* Empeche l'effet "bounce" sur iOS quand on tire la page */
+  overscroll-behavior: none;
+
+  /* Amelioration du touch : pas de delai de 300ms au tap */
+  touch-action: manipulation;
+
+  /* Prend en compte l'encoche iPhone en haut/bas */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* -- Regle importante pour les elements qui pourraient deborder -- */
+/* Les tables, les longs textes sans espace, les images sans max-width */
+img,
+video,
+svg,
+canvas,
+iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Les tables sont mises en scroll horizontal isole, pas au niveau du body */
+table {
+  max-width: 100%;
 }
 
 
 /* ============================================================
-   Accessibilite
+   ACCESSIBILITE
    ============================================================ */
 
-/* Anneau de focus visible au clavier (pas au clic souris) */
+/* Anneau de focus visible quand on utilise le clavier (pas la souris) */
 :focus-visible {
   outline: 2px solid var(--color-bronze);
   outline-offset: 2px;
   border-radius: 4px;
 }
 
-/* Masque l'outline sur les clics souris */
+/* Cache l'anneau quand on clique a la souris (moins genant visuellement) */
 :focus:not(:focus-visible) {
   outline: none;
 }
 
-/* Texte invisible mais lisible par les lecteurs d'ecran */
+/* Texte lu par les lecteurs d'ecran mais invisible pour les voyants */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -128,7 +176,7 @@ body {
   border: 0;
 }
 
-/* Respect de la preference "mouvement reduit" */
+/* Respecte le reglage "reduire les animations" du systeme */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -141,10 +189,43 @@ body {
 
 
 /* ============================================================
-   Scrollbar personnalisee — coherente avec la charte
+   FORMULAIRES — evite le zoom automatique sur iOS
+   iOS zoome quand un input a font-size < 16px lors du focus
+   On force 16px sur mobile, on garde 14px sur desktop
    ============================================================ */
 
-/* Webkit (Chrome, Edge, Safari) */
+/* Sur mobile uniquement : force la taille de police pour eviter le zoom */
+@media (max-width: 767px) {
+  input:not([type='checkbox']):not([type='radio']),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Les <select> natifs : meilleure apparence sur toutes plateformes */
+select {
+  /* On enleve l'apparence par defaut du navigateur */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  /* On ajoute notre propre chevron (fleche vers le bas) */
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B6259' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 12px;
+
+  /* Espace a droite pour ne pas superposer le texte et le chevron */
+  padding-right: 36px !important;
+}
+
+
+/* ============================================================
+   SCROLLBAR PERSONNALISEE — coherente avec la charte
+   ============================================================ */
+
+/* Chrome, Edge, Safari */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -171,15 +252,18 @@ body {
 
 
 /* ============================================================
-   Typographie de base
+   TYPOGRAPHIE DE BASE
    ============================================================ */
 
-/* Titres en Manrope */
+/* Titres en Manrope (police heading) */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading);
   font-weight: 700;
   color: var(--color-anthracite);
   line-height: 1.25;
+  /* Coupe les mots trop longs au lieu de deborder */
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
 
 h1 { font-size: 28px; }
@@ -187,10 +271,12 @@ h2 { font-size: 22px; }
 h3 { font-size: 18px; }
 h4 { font-size: 15px; }
 
-/* Paragraphes avec espacement */
+/* Paragraphes avec espacement et coupe des mots longs */
 p {
   margin-bottom: 0.75em;
   line-height: 1.65;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
 
 /* Liens */
@@ -204,19 +290,20 @@ a:hover {
   color: var(--color-emerald-light);
 }
 
-/* Texte monospace pour les codes techniques */
+/* Codes techniques : police monospace */
 code,
 .tracking-number {
   font-family: var(--font-mono);
   font-size: 0.9em;
+  overflow-wrap: break-word;
 }
 
 
 /* ============================================================
-   Composants de base (classes utilitaires complementaires)
+   CLASSES UTILITAIRES — reutilisables partout
    ============================================================ */
 
-/* Fond de carte standard */
+/* Carte standard : fond blanc, bordure douce, coins arrondis */
 .card {
   background-color: white;
   border: 1px solid var(--color-border);
@@ -224,13 +311,38 @@ code,
   transition: box-shadow var(--transition-normal);
 }
 
-/* Hover sur les cartes cliquables */
+/* Carte cliquable : ombre au survol */
 .card-interactive:hover {
   box-shadow: 0 4px 12px rgba(11, 77, 63, 0.08);
 }
 
-/* Cible tactile minimum 44px pour l'accessibilite mobile */
+/* Cible tactile minimum : 44x44 px (norme WCAG accessibilite) */
 .touch-target {
   min-height: 44px;
   min-width: 44px;
+}
+
+/* Cache la scrollbar mais garde le scroll actif (pour les filtres pilules) */
+.scrollbar-hide {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE, Edge */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
+}
+
+/* Empeche un container de "pousser" son parent horizontalement */
+.contain-x {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Pour les containers qui doivent scroller horizontalement (tables) */
+/* Isole le scroll : le parent n'est PAS pousse a droite */
+.scroll-x-contain {
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
 }

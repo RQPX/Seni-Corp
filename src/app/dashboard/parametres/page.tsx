@@ -17,11 +17,15 @@ const C = {
   white: "#FFFFFF",
 };
 
+// -- Style commun des champs de formulaire --
+// fontSize 16px = evite le zoom automatique sur iOS au focus
+// minHeight 48px = cible tactile confortable au doigt
 const inputStyle: React.CSSProperties = {
-  padding: "11px 14px", fontSize: "14px", borderRadius: "10px",
+  padding: "12px 14px", fontSize: "16px", borderRadius: "10px",
   backgroundColor: C.ivory, border: `1px solid ${C.border}`,
   color: C.anthracite, fontFamily: "var(--font-body)",
   outline: "none", width: "100%",
+  minHeight: "48px",
 };
 
 const TABS = [
