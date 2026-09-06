@@ -124,8 +124,9 @@ body {
   /* Empeche l'effet "bounce" sur iOS quand on tire la page */
   overscroll-behavior: none;
 
-  /* Amelioration du touch : pas de delai de 300ms au tap */
-  touch-action: manipulation;
+  /* Retire le delai de 300ms sans desactiver le zoom par double tap.
+     (le delai n'existe plus sur les navigateurs a jour avec un viewport correct) */
+  touch-action: pan-x pan-y pinch-zoom;
 
   /* Pas de padding d'encoche ici : chaque barre fixe gere son propre
      safe-area (voir dashboard/layout.tsx). Le body fait deja 100dvh ;
