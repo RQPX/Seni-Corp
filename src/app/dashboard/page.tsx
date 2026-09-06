@@ -228,7 +228,7 @@ export default function DashboardPage() {
 
   // -- Pourcentage de colis livres --
   const livresPercent = useMemo(() => {
-    if (colis.length === 0) return 100;
+    if (colis.length === 0) return 0;
     const livres = colis.filter((c) => c.statut === "livre").length;
     return Math.round((livres / colis.length) * 100);
   }, [colis]);
@@ -259,7 +259,7 @@ export default function DashboardPage() {
             trendLabel={colis.length > 0 ? `${colis.length} colis au total` : "Aucun colis pour l'instant"}
           />
           <KpiCard
-            label="Livres a temps"
+            label="Colis livres"
             value={livresPercent.toString()}
             unit="%"
             trendLabel={`${colis.filter(c => c.statut === "livre").length} colis livres`}
