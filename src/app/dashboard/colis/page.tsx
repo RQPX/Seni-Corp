@@ -115,7 +115,6 @@ function ColisPageInner() {
 
   // -- Filtrage : par statut ET par texte de recherche --
   const filtered = useMemo(() => {
-    setPage(1); // reset a la page 1 a chaque changement de filtre
     return colis.filter((c) => {
       if (activeFilter !== "tous" && c.statut !== activeFilter) return false;
       if (search) {
@@ -131,9 +130,15 @@ function ColisPageInner() {
     });
   }, [search, activeFilter, colis]);
 
+  // Retour a la page 1 quand le filtre ou la recherche change
+  useEffect(() => { setPage(1); }, [search, activeFilter]);
+
   // Pagination
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
-  const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
+  // Garde-fou : si la liste retrecit, on ne reste pas sur une page vide
+  const safePage = Math.min(page, totalPages);
+  const paginated = filtered.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE);
 
   // Compteurs par statut (affiches dans les filtres)
   const counts = useMemo(() => {
@@ -321,40 +326,40 @@ function ColisPageInner() {
           <span style={{ fontSize: "12px", color: C.taupe }}>
             {filtered.length === 0
               ? "0 colis"
-              : `${(page - 1) * PER_PAGE + 1}\u2013${Math.min(page * PER_PAGE, filtered.length)} sur ${filtered.length} colis`}
+              : `${(safePage - 1) * PER_PAGE + 1}\u2013${Math.min(safePage * PER_PAGE, filtered.length)} sur ${filtered.length} colis`}
           </span>
           {totalPages > 1 && (
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
+                disabled={safePage === 1}
                 className="rounded-lg"
                 style={{
                   padding: "8px 14px", fontSize: "12px", fontWeight: 600,
                   fontFamily: "var(--font-heading)",
-                  backgroundColor: page === 1 ? C.sage : C.white,
+                  backgroundColor: safePage === 1 ? C.sage : C.white,
                   border: `1px solid ${C.border}`,
-                  color: page === 1 ? C.taupeLight : C.taupe,
-                  cursor: page === 1 ? "not-allowed" : "pointer",
+                  color: safePage === 1 ? C.taupeLight : C.taupe,
+                  cursor: safePage === 1 ? "not-allowed" : "pointer",
                   minHeight: "40px",
                 }}
               >
                 Precedent
               </button>
               <span style={{ fontSize: "12px", color: C.taupe, padding: "0 4px" }}>
-                {page} / {totalPages}
+                {safePage} / {totalPages}
               </span>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
+                disabled={safePage === totalPages}
                 className="rounded-lg"
                 style={{
                   padding: "8px 14px", fontSize: "12px", fontWeight: 600,
                   fontFamily: "var(--font-heading)",
-                  backgroundColor: page === totalPages ? C.sage : C.emerald,
+                  backgroundColor: safePage === totalPages ? C.sage : C.emerald,
                   border: "none",
-                  color: page === totalPages ? C.taupeLight : C.white,
-                  cursor: page === totalPages ? "not-allowed" : "pointer",
+                  color: safePage === totalPages ? C.taupeLight : C.white,
+                  cursor: safePage === totalPages ? "not-allowed" : "pointer",
                   minHeight: "40px",
                 }}
               >
