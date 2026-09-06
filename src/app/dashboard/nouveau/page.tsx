@@ -286,7 +286,11 @@ export default function NouveauColisPage() {
                 <Field label="Ville d'origine">
                   <select
                     value={origine}
-                    onChange={(e) => setOrigine(e.target.value)}
+                    onChange={(e) => {
+                      setOrigine(e.target.value);
+                      // La destination ne peut pas rester egale a la nouvelle origine
+                      if (destination === e.target.value) setDestination("");
+                    }}
                     style={inputStyle}
                     aria-label="Ville d'origine"
                   >
