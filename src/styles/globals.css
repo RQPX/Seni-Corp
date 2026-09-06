@@ -126,9 +126,10 @@ body {
   /* Amelioration du touch : pas de delai de 300ms au tap */
   touch-action: manipulation;
 
-  /* Prend en compte l'encoche iPhone en haut/bas */
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
+  /* Pas de padding d'encoche ici : chaque barre fixe gere son propre
+     safe-area (voir dashboard/layout.tsx). Le body fait deja 100dvh ;
+     lui ajouter les marges d'encoche depassait la hauteur de l'ecran
+     et causait un double defilement vertical sur iOS. */
 }
 
 /* -- Regle importante pour les elements qui pourraient deborder -- */
