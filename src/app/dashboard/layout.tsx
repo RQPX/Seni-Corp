@@ -97,6 +97,9 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
           backgroundColor: C.emerald,
           // maxHeight avec dvh pour eviter les debordements sur iOS Safari
           maxHeight: "100dvh",
+          // La sidebar est en position fixed : elle ignore le padding du body
+          // (retire en C3), donc gere elle-meme l'encoche du haut sur iPhone
+          paddingTop: "env(safe-area-inset-top)",
         }}
       >
         {/* -- En-tete de la sidebar : logo + bouton fermer (mobile) -- */}
