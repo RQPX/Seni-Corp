@@ -17,10 +17,9 @@ const C = {
 };
 
 const FACTURES = [
-  { id: "FAC-2026-04", periode: "Avril 2026", colis: 234, montant: 468000, statut: "en_cours", lignes: [
-    { desc: "Envois point relais (198 colis)", montant: 356400 },
-    { desc: "Livraisons domicile (36 colis)", montant: 108000 },
-    { desc: "Supplements poids > 2kg", montant: 3600 },
+  { id: "FAC-2026-04", periode: "Avril 2026", colis: 10, montant: 22600, statut: "en_cours", lignes: [
+    { desc: "Envois point relais (7 colis)", montant: 14500 },
+    { desc: "Livraisons domicile (3 colis)", montant: 8100 },
   ]},
   { id: "FAC-2026-03", periode: "Mars 2026", colis: 198, montant: 396000, statut: "payee", lignes: [
     { desc: "Envois point relais (170 colis)", montant: 306000 },
