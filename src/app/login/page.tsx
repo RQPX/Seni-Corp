@@ -226,7 +226,7 @@ function LoginPageInner() {
         backgroundColor: C.ivory,
         // dvh pour bien s'adapter sur iOS
         minHeight: "100dvh",
-        maxWidth: "100vw",
+        maxWidth: "100%",
         overflowX: "hidden",
       }}
     >

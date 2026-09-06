@@ -529,7 +529,7 @@ function BottomNav() {
         // Prend en compte l'encoche du bas sur iPhone
         paddingBottom: "env(safe-area-inset-bottom)",
         // Empeche le debordement horizontal
-        maxWidth: "100vw",
+        maxWidth: "100%",
         overflowX: "hidden",
       }}
     >
@@ -626,7 +626,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         maxHeight: "100dvh",
         // -- FIX RESPONSIVE PRINCIPAL --
         // Force le layout a ne jamais depasser la largeur de l'ecran
-        maxWidth: "100vw",
+        maxWidth: "100%",
         width: "100%",
         overflowX: "hidden",
         backgroundColor: C.ivory,

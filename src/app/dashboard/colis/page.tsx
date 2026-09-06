@@ -382,8 +382,8 @@ function ColisPageInner() {
           <div
             className="fixed top-0 right-0 z-[70]"
             style={{
-              width: "min(440px, 100vw)",
-              maxWidth: "100vw",
+              width: "min(440px, 100%)",
+              maxWidth: "100%",
               // Utilise dvh pour bien s'adapter aux barres iOS
               height: "100dvh",
               backgroundColor: C.white,
