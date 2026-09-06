@@ -534,6 +534,8 @@ function BottomNav() {
         // Empeche le debordement horizontal
         maxWidth: "100%",
         overflowX: "hidden",
+        // Laisse depasser le bouton rond "Nouveau" sans le rogner
+        overflowY: "visible",
       }}
     >
       {items.map((item) => {
@@ -572,10 +574,15 @@ function BottomNav() {
               <Icon size={20} strokeWidth={isActive ? 2.2 : 1.8} />
             )}
             <span style={{
-              fontSize: "9px",
+              fontSize: "10px",
+              lineHeight: 1.2,
               fontFamily: "var(--font-heading)",
               fontWeight: isActive ? 700 : 500,
               marginTop: isNew ? "2px" : "0",
+              // Tronque proprement au lieu de deborder
+              maxWidth: "100%",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
               whiteSpace: "nowrap",
             }}>
               {item.label}
