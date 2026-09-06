@@ -76,7 +76,8 @@ type AppStore = {
   addColis: (colis: ColisItem) => void;
 
   // Debite le solde et enregistre la transaction correspondante
-  deductSolde: (amount: number, tracking: string) => void;
+  // Retourne false si le solde est insuffisant : l'appelant doit gerer le refus
+  deductSolde: (amount: number, tracking: string) => boolean;
 
   // Credite le solde et enregistre la transaction de recharge
   rechargeSolde: (amount: number, method: string) => void;
@@ -84,7 +85,7 @@ type AppStore = {
 
 export const useAppStore = create<AppStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       colis: DEMO_COLIS,
       solde: 87500,
       transactions: DEMO_TRANSACTIONS,
@@ -92,9 +93,11 @@ export const useAppStore = create<AppStore>()(
       addColis: (colis) =>
         set((state) => ({ colis: [colis, ...state.colis] })),
 
-      deductSolde: (amount, tracking) =>
-        set((state) => ({
-          solde: Math.max(0, state.solde - amount),
+      deductSolde: (amount, tracking) => {
+        const state = get();
+        if (state.solde < amount) return false;
+        set({
+          solde: state.solde - amount,
           transactions: [
             {
               id: Date.now(),
@@ -106,7 +109,9 @@ export const useAppStore = create<AppStore>()(
             },
             ...state.transactions,
           ],
-        })),
+        });
+        return true;
+      },
 
       rechargeSolde: (amount, method) =>
         set((state) => ({

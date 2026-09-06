@@ -141,8 +141,16 @@ export default function NouveauColisPage() {
     : step === 3 ? poidsValide
     : !!nomDest && !!telDest;
 
+  const [payError, setPayError] = useState("");
+  const soldeInsuffisant = paymentMethod === "solde" && tarif !== null && solde < tarif;
+
   // -- Ouvre la modale de confirmation de paiement --
   const handlePay = () => {
+    if (soldeInsuffisant) {
+      setPayError(`Solde insuffisant : ${solde.toLocaleString("fr")} XOF disponibles pour ${tarif!.toLocaleString("fr")} XOF. Recharge ton compte ou choisis CinetPay.`);
+      return;
+    }
+    setPayError("");
     setShowConfirm(true);
     setPaymentStatus("idle");
   };
@@ -156,6 +164,14 @@ export default function NouveauColisPage() {
     // Simule le delai d'un appel API paiement
     // TODO : remplacer par un vrai appel API (Wave / CinetPay webhook)
     setTimeout(() => {
+      // Debite le solde uniquement si l'utilisateur a choisi cette option
+      // Si le solde est devenu insuffisant entre-temps, on refuse sans creer le colis
+      if (paymentMethod === "solde" && !deductSolde(tarif, tracking)) {
+        setPaymentStatus("idle");
+        setPayError(`Solde insuffisant : ${solde.toLocaleString("fr")} XOF disponibles pour ${tarif.toLocaleString("fr")} XOF. Recharge ton compte ou choisis CinetPay.`);
+        return;
+      }
+
       addColis({
         tracking,
         origine,
@@ -169,11 +185,6 @@ export default function NouveauColisPage() {
         contenu: contenu || "Non specifie",
         service: service === "relais" ? "Point relais" : "Livraison domicile",
       });
-
-      // Debite le solde uniquement si l'utilisateur a choisi cette option
-      if (paymentMethod === "solde") {
-        deductSolde(tarif, tracking);
-      }
 
       setNewTracking(tracking);
       setPaymentStatus("done");
@@ -191,6 +202,7 @@ export default function NouveauColisPage() {
     setContenu("");
     setPaymentStatus("idle");
     setNewTracking("");
+    setPayError("");
   };
 
 
@@ -421,7 +433,7 @@ export default function NouveauColisPage() {
                       <button
                         type="button"
                         key={pm.id}
-                        onClick={() => setPaymentMethod(pm.id)}
+                        onClick={() => { setPaymentMethod(pm.id); setPayError(""); }}
                         className="text-left rounded-xl p-4"
                         style={{
                           border: `2px solid ${paymentMethod === pm.id ? C.emerald : C.border}`,
@@ -453,6 +465,13 @@ export default function NouveauColisPage() {
             {step === 4 && tarifError && (
               <p style={{ fontSize: "11px", color: "#C66D4F", marginTop: "16px" }}>
                 {tarifError}
+              </p>
+            )}
+
+            {/* Refus de paiement (solde insuffisant) */}
+            {step === 4 && payError && (
+              <p style={{ fontSize: "11px", color: "#C66D4F", marginTop: "16px" }}>
+                {payError}
               </p>
             )}
 
