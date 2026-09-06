@@ -89,7 +89,8 @@
 
 html {
   font-family: var(--font-body);
-  font-size: 14px;
+  /* Pas de font-size en px sur html : on respecte le reglage du navigateur.
+     Les tailles de texte sont definies dans tailwind.config.ts (fontSize). */
   line-height: 1.6;
   color: var(--color-anthracite);
   background-color: var(--color-ivory);
