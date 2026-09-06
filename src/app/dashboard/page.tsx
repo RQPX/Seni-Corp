@@ -19,6 +19,7 @@ import {
 } from "recharts";
 import { FilterTabs } from "@/components/ui/FilterTabs";
 import { statutConfig } from "@/lib/statuts";
+import { formatDateFr } from "@/lib/utils";
 
 // Palette de la marque
 const C = {
@@ -176,32 +177,45 @@ export default function DashboardPage() {
 
   // -- Donnees du graphique : 14 derniers jours --
   const chartData = useMemo(() => {
+    // Cle stable AAAA-MM-JJ, insensible au format d'affichage
+    const dayKey = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+    // On compte une seule fois, en O(n) au lieu de 14 filtres
+    const parJour = new Map<string, number>();
+    colis.forEach((c) => {
+      const d = new Date(c.createdAt);
+      if (isNaN(d.getTime())) return;          // date invalide : on ignore
+      const k = dayKey(d);
+      parJour.set(k, (parJour.get(k) ?? 0) + 1);
+    });
+
     const today = new Date();
     return Array.from({ length: 14 }, (_, i) => {
       const d = new Date(today);
       d.setDate(today.getDate() - (13 - i));
-      const dd = String(d.getDate()).padStart(2, "0");
-      const mm = String(d.getMonth() + 1).padStart(2, "0");
-      const yyyy = d.getFullYear();
-      const dateStr = `${dd}/${mm}/${yyyy}`;
-      const count = colis.filter((c) => c.date === dateStr).length;
-      // Etiquette : premier jour = jour + mois, dernier = "Auj.", autres = numero
-      const jour = i === 0 ? `${d.getDate()} ${MOIS[d.getMonth()]}` : i === 13 ? "Auj." : String(d.getDate());
-      return { jour, colis: count };
+      const jour = i === 13 ? "Auj."
+        : i === 0 ? `${d.getDate()} ${MOIS[d.getMonth()]}`
+        : String(d.getDate());
+      return { jour, colis: parJour.get(dayKey(d)) ?? 0 };
     });
   }, [colis]);
 
   // -- Activite recente : fusion colis + transactions triee par date --
   const recentActivity = useMemo(() => {
+    // Accepte "27/04/2026" et "27/04/2026 10:15"
     const parseDate = (s: string) => {
-      const [d, m, y] = s.split("/");
-      return isNaN(+d) ? 0 : new Date(+y, +m - 1, +d).getTime();
+      const [datePart, timePart] = String(s).trim().split(" ");
+      const [d, m, y] = datePart.split("/").map(Number);
+      const [hh = 0, mn = 0] = (timePart ?? "").split(":").map(Number);
+      const t = new Date(y, m - 1, d, hh, mn).getTime();
+      return Number.isNaN(t) ? 0 : t;
     };
     const items = [
       ...colis.slice(0, 5).map((c) => ({
         key: c.tracking, tracking: c.tracking,
         action: `cree — ${c.origine} vers ${c.destination}`,
-        date: c.date, dotColor: C.emerald,
+        date: formatDateFr(c.createdAt), dotColor: C.emerald,
       })),
       ...transactions.slice(0, 5).map((tx) => ({
         key: String(tx.id), tracking: "",

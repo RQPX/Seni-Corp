@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { FilterTabs, type FilterOption } from "@/components/ui/FilterTabs";
 import { STATUTS, statutConfig } from "@/lib/statuts";
+import { formatDateFr } from "@/lib/utils";
 
 const C = {
   emerald: "#0B4D3F", emeraldLight: "#1A6B58", emeraldSoft: "#E8F0ED",
@@ -72,7 +73,7 @@ function StatusBadge({ statut }: { statut: string }) {
 function exportCSV(data: ColisItem[]) {
   const headers = ["Tracking", "Date", "Origine", "Destination", "Destinataire", "Telephone", "Poids", "Statut", "Montant XOF"];
   const rows = data.map((c) => [
-    c.tracking, c.date, c.origine, c.destination,
+    c.tracking, formatDateFr(c.createdAt), c.origine, c.destination,
     c.destinataire, c.telephone, c.poids,
     statutConfig(c.statut).label, c.montant.toString(),
   ]);
@@ -288,7 +289,7 @@ function ColisPageInner() {
                       {colis.tracking}
                     </span>
                   </td>
-                  <td style={{ padding: "12px 16px", fontSize: "12px", color: C.taupe }}>{colis.date}</td>
+                  <td style={{ padding: "12px 16px", fontSize: "12px", color: C.taupe }}>{formatDateFr(colis.createdAt)}</td>
                   <td style={{ padding: "12px 16px", fontSize: "13px", color: C.anthracite }}>
                     <strong>{colis.origine}</strong>
                     <span style={{ color: C.bronze, margin: "0 6px" }}>{"\u2192"}</span>
@@ -435,7 +436,7 @@ function ColisPageInner() {
               <div className="rounded-xl" style={{ border: `1px solid ${C.border}`, overflow: "hidden" }}>
                 {[
                   { label: "Trajet",       value: `${selectedColis.origine} \u2192 ${selectedColis.destination}` },
-                  { label: "Date",         value: selectedColis.date },
+                  { label: "Date",         value: formatDateFr(selectedColis.createdAt) },
                   { label: "Service",      value: selectedColis.service },
                   { label: "Poids",        value: selectedColis.poids },
                   { label: "Contenu",      value: selectedColis.contenu },

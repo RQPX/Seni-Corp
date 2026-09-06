@@ -54,12 +54,6 @@ function genTracking(): string {
   ).join('');
 }
 
-// -- Formate la date du jour en DD/MM/YYYY --
-function todayStr(): string {
-  const d = new Date();
-  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
-}
-
 // -- Style commun de tous les champs de formulaire --
 const inputStyle: React.CSSProperties = {
   padding: "12px 14px",
@@ -162,7 +156,7 @@ export default function NouveauColisPage() {
         telephone: telDest,
         statut: "cree",
         montant: tarif,
-        date: todayStr(),
+        createdAt: new Date().toISOString(),
         poids: `${poids} kg`,
         contenu: contenu || "Non specifie",
         service: service === "relais" ? "Point relais" : "Livraison domicile",
