@@ -166,8 +166,8 @@ function LoginPageInner() {
     }
 
     // -- Validation basique cote client --
-    if (password.length < 6) {
-      setError("Le mot de passe doit contenir au moins 6 caracteres.");
+    if (password.length < 8) {
+      setError("Le mot de passe doit contenir au moins 8 caracteres.");
       return;
     }
 
