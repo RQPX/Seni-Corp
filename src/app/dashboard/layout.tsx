@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
+import { logout as apiLogout } from "@/lib/api";
 
 // Palette de couleurs de la marque
 const C = {
@@ -62,10 +63,12 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   // Suivi de la derniere section pour afficher un titre de groupe une seule fois
   let lastSection = "";
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setShowLogoutConfirm(false);
-    // TODO : appeler l'API /auth/logout pour invalider le cookie httpOnly
-    router.push("/login");
+    // Invalide la session cote backend (efface le cookie httpOnly)
+    await apiLogout();
+    // replace() : empeche le retour arriere vers le dashboard
+    router.replace("/login");
   };
 
   return (
