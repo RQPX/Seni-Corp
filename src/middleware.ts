@@ -123,18 +123,8 @@ export function middleware(request: NextRequest) {
 // On l'applique partout SAUF sur les fichiers statiques (images, CSS...)
 // pour ne pas ralentir le site
 export const config = {
-  matcher: [
-    // Toutes les pages sauf :
-    //   - /_next/static  (fichiers Next.js compiles)
-    //   - /_next/image   (optimisation d'images)
-    //   - /favicon.ico   (icone du site)
-    //   - fichiers avec extension (.js, .css, .png, etc.)
-    {
-      source: "/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)",
-      missing: [
-        { type: "header", key: "next-router-prefetch" },
-        { type: "header", key: "purpose", value: "prefetch" },
-      ],
-    },
-  ],
+  // Pas de "missing" ici : la garde d'authentification (A1) doit aussi
+  // s'appliquer aux requetes de prechargement des <Link>, sinon elle est
+  // contournee en continu par la navigation normale du site.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)"],
 };
