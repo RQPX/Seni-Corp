@@ -18,6 +18,7 @@ import {
   ResponsiveContainer, CartesianGrid
 } from "recharts";
 import { FilterTabs } from "@/components/ui/FilterTabs";
+import { statutConfig } from "@/lib/statuts";
 
 // Palette de la marque
 const C = {
@@ -31,31 +32,30 @@ const C = {
 // Mois en francais pour le graphique
 const MOIS = ["jan","fev","mar","avr","mai","jun","jul","aou","sep","oct","nov","dec"];
 
-// Configuration visuelle de chaque statut
-const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string; icon: typeof Clock }> = {
-  livre:   { label: "Livre",      bg: C.emeraldSoft, color: C.success,      icon: CheckCircle2 },
-  relais:  { label: "Au relais",  bg: C.emeraldSoft, color: C.emeraldLight, icon: MapPin },
-  transit: { label: "En transit", bg: C.bronzeSoft,  color: C.bronze,       icon: Truck },
-  cree:    { label: "Cree",       bg: C.sage,        color: C.taupe,        icon: Clock },
-  retarde: { label: "Retarde",    bg: "#FEF3E5",     color: "#B88838",      icon: AlertTriangle },
-  annule:  { label: "Annule",     bg: "#FCEEE9",     color: C.terra,        icon: XCircle },
-  retourne:{ label: "Retourne",   bg: "#FCEEE9",     color: C.terra,        icon: RotateCcw },
+// Icone de chaque statut (couleurs et libelle lus depuis statutConfig)
+const STATUT_ICONS: Record<string, typeof Clock> = {
+  livre:      CheckCircle2,
+  attente:    MapPin,
+  transit:    Truck,
+  cree:       Clock,
+  retarde:    AlertTriangle,
+  annule:     XCircle,
+  retourne:   RotateCcw,
 };
 
 // Options du filtre affichees en haut du tableau
 const FILTER_OPTIONS = [
   { value: "tous",    label: "Tous" },
   { value: "livre",   label: "Livres" },
-  { value: "relais",  label: "Au relais" },
+  { value: "attente", label: "En attente retrait" },
   { value: "transit", label: "En transit" },
   { value: "cree",    label: "Crees" },
 ];
 
 // -- Petit badge colore selon le statut --
 function StatusBadge({ statut }: { statut: string }) {
-  const config = STATUS_CONFIG[statut];
-  if (!config) return null;
-  const Icon = config.icon;
+  const config = statutConfig(statut);
+  const Icon = STATUT_ICONS[statut];
   return (
     <span
       className="inline-flex items-center gap-1.5 rounded-full"
@@ -69,7 +69,7 @@ function StatusBadge({ statut }: { statut: string }) {
         whiteSpace: "nowrap",
       }}
     >
-      <Icon size={11} strokeWidth={2} />
+      {Icon && <Icon size={11} strokeWidth={2} />}
       {config.label}
     </span>
   );

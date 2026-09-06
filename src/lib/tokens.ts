@@ -151,18 +151,5 @@ export const transitions = {
   page:   "400ms ease-out",
 } as const;
 
-
 // -- Statuts colis --
-// Configuration visuelle pour chaque statut
-// Utilise dans les badges, les timelines, et les filtres
-export const colisStatuts = {
-  cree:        { label: "Cree",            bg: colors.sage.DEFAULT, color: colors.taupe.DEFAULT },
-  pris:        { label: "Pris en charge",  bg: colors.emerald.soft, color: colors.emerald.DEFAULT },
-  transit:     { label: "En transit",      bg: colors.bronze.soft,  color: colors.bronze.DEFAULT },
-  arrive:      { label: "Arrive relais",   bg: colors.emerald.soft, color: colors.emerald.light },
-  livraison:   { label: "En livraison",    bg: colors.bronze.soft,  color: colors.bronze.DEFAULT },
-  livre:       { label: "Livre",           bg: colors.emerald.soft, color: colors.success },
-  retarde:     { label: "Retarde",         bg: "#FEF3E5",           color: colors.warning },
-  annule:      { label: "Annule",          bg: colors.terra.soft,   color: colors.terra.DEFAULT },
-  retourne:    { label: "Retourne",        bg: colors.terra.soft,   color: colors.error },
-} as const;
+// Deplace dans src/lib/statuts.ts (source unique, alignee sur le backend)

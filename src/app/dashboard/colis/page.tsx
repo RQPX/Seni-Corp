@@ -15,10 +15,11 @@ import { useSearchParams } from "next/navigation";
 import { useAppStore, type ColisItem } from "@/store/appStore";
 import {
   Search, ChevronRight, CheckCircle2, MapPin,
-  Truck, Clock, Package, AlertTriangle, XCircle, Download,
+  Truck, Clock, Package, AlertTriangle, XCircle, RotateCcw, Download,
   X, ArrowLeft, Copy, Phone
 } from "lucide-react";
 import { FilterTabs, type FilterOption } from "@/components/ui/FilterTabs";
+import { STATUTS, statutConfig } from "@/lib/statuts";
 
 const C = {
   emerald: "#0B4D3F", emeraldLight: "#1A6B58", emeraldSoft: "#E8F0ED",
@@ -29,22 +30,27 @@ const C = {
   warning: "#B88838", warningSoft: "#FEF3E5", white: "#FFFFFF",
 };
 
-// Configuration des statuts (etiquette, couleur, icone)
-const STATUTS: Record<string, { label: string; bg: string; color: string; icon: typeof Clock }> = {
-  tous:    { label: "Tous",       bg: C.sage,        color: C.taupe,        icon: Package },
-  cree:    { label: "Cree",       bg: C.sage,        color: C.taupe,        icon: Clock },
-  transit: { label: "En transit", bg: C.bronzeSoft,  color: C.bronze,       icon: Truck },
-  relais:  { label: "Au relais",  bg: C.emeraldSoft, color: C.emeraldLight, icon: MapPin },
-  livre:   { label: "Livre",      bg: C.emeraldSoft, color: C.success,      icon: CheckCircle2 },
-  retarde: { label: "Retarde",    bg: C.warningSoft, color: C.warning,      icon: AlertTriangle },
-  annule:  { label: "Annule",     bg: C.terraSoft,   color: C.terra,        icon: XCircle },
+// Icone de chaque statut (couleurs et libelle lus depuis statutConfig)
+const STATUT_ICONS: Record<string, typeof Clock> = {
+  cree:       Clock,
+  pris:       Package,
+  transit:    Truck,
+  arrive_hub: MapPin,
+  attente:    MapPin,
+  livraison:  Truck,
+  livre:      CheckCircle2,
+  retarde:    AlertTriangle,
+  incident:   AlertTriangle,
+  retourne:   RotateCcw,
+  perdu:      XCircle,
+  annule:     XCircle,
 };
 
 // -- Badge de statut (etiquette coloree avec icone) --
 function StatusBadge({ statut }: { statut: string }) {
-  const config = STATUTS[statut];
-  if (!config || statut === "tous") return null;
-  const Icon = config.icon;
+  if (statut === "tous") return null;
+  const config = statutConfig(statut);
+  const Icon = STATUT_ICONS[statut];
   return (
     <span
       className="inline-flex items-center gap-1.5 rounded-full"
@@ -55,7 +61,7 @@ function StatusBadge({ statut }: { statut: string }) {
         fontSize: "10px", fontWeight: 600, whiteSpace: "nowrap",
       }}
     >
-      <Icon size={11} strokeWidth={2} />
+      {Icon && <Icon size={11} strokeWidth={2} />}
       {config.label}
     </span>
   );
@@ -68,7 +74,7 @@ function exportCSV(data: ColisItem[]) {
   const rows = data.map((c) => [
     c.tracking, c.date, c.origine, c.destination,
     c.destinataire, c.telephone, c.poids,
-    STATUTS[c.statut]?.label || c.statut, c.montant.toString(),
+    statutConfig(c.statut).label, c.montant.toString(),
   ]);
   const csv = [headers.join(";"), ...rows.map((r) => r.join(";"))].join("\n");
   const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
@@ -138,11 +144,14 @@ function ColisPageInner() {
   }, [colis]);
 
   // -- Options du composant FilterTabs --
-  const filterOptions: FilterOption[] = Object.entries(STATUTS).map(([key, config]) => ({
-    value: key,
-    label: config.label,
-    count: counts[key] || 0,
-  }));
+  const filterOptions: FilterOption[] = [
+    { value: "tous", label: "Tous", count: counts.tous || 0 },
+    ...Object.entries(STATUTS).map(([key, config]) => ({
+      value: key,
+      label: config.label,
+      count: counts[key] || 0,
+    })),
+  ];
 
   return (
     <div
