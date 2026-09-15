@@ -14,7 +14,36 @@ import type { NextRequest } from "next/server";
 // En dev, on est plus permissif pour laisser marcher les outils de debug
 const isProduction = process.env.NODE_ENV === "production";
 
+// -- Nom du cookie de session --
+// TODO verifier le nom du cookie cote backend
+// A ce jour, POST /auth/login (NestJS) renvoie le JWT dans le corps JSON
+// et ne pose AUCUN cookie : cette garde reste inactive tant que le backend
+// ne pose pas ce cookie httpOnly a la connexion (voir aussi /auth/logout, /auth/me).
+const SESSION_COOKIE = "seni_session";
+
 export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // -- Garde d'authentification --
+  const session = request.cookies.get(SESSION_COOKIE);
+  const isProtected = pathname.startsWith("/dashboard");
+  const isAuthPage = pathname.startsWith("/login");
+
+  if (isProtected && !session) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    url.search = `?session=expired&from=${encodeURIComponent(pathname)}`;
+    return NextResponse.redirect(url);
+  }
+
+  // Deja connecte : on ne montre pas la page de login
+  if (isAuthPage && session) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/dashboard";
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+
   // -- Genere un nonce (jeton aleatoire a usage unique) --
   // Ce jeton est ajoute a chaque script/style autorise
   // Un script pirate injecte n'aura PAS ce jeton et sera bloque
@@ -94,18 +123,8 @@ export function middleware(request: NextRequest) {
 // On l'applique partout SAUF sur les fichiers statiques (images, CSS...)
 // pour ne pas ralentir le site
 export const config = {
-  matcher: [
-    // Toutes les pages sauf :
-    //   - /_next/static  (fichiers Next.js compiles)
-    //   - /_next/image   (optimisation d'images)
-    //   - /favicon.ico   (icone du site)
-    //   - fichiers avec extension (.js, .css, .png, etc.)
-    {
-      source: "/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)",
-      missing: [
-        { type: "header", key: "next-router-prefetch" },
-        { type: "header", key: "purpose", value: "prefetch" },
-      ],
-    },
-  ],
+  // Pas de "missing" ici : la garde d'authentification (A1) doit aussi
+  // s'appliquer aux requetes de prechargement des <Link>, sinon elle est
+  // contournee en continu par la navigation normale du site.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)"],
 };

@@ -50,9 +50,9 @@ export function FilterTabs({ options, value, onChange, ariaLabel = "Filtrer" }: 
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    // On considere "mobile" tout ecran < 640px de large
-    // C'est le breakpoint "sm" de Tailwind
-    const mq = window.matchMedia("(max-width: 639px)");
+    // Meme point de rupture que le layout du dashboard (Tailwind md, 768px) :
+    // sinon entre 640 et 767px on a la nav mobile ET les pilules desktop.
+    const mq = window.matchMedia("(max-width: 767px)");
 
     // Mise a jour immediate au chargement
     setIsMobile(mq.matches);

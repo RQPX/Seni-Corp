@@ -21,7 +21,7 @@ const FAQ = [
   { question: "Comment suivre un colis ?", answer: "Allez dans \"Mes colis\" pour voir le statut de tous vos envois. Vous pouvez aussi partager le lien de suivi public avec votre destinataire.", icon: Truck },
   { question: "Comment recharger mon compte ?", answer: "Allez dans \"Paiements\", choisissez un montant et cliquez sur \"Recharger via CinetPay\". Vous pouvez payer par Wave, Orange Money ou carte bancaire. La recharge est instantanee.", icon: CreditCard },
   { question: "Que faire si mon colis est en retard ?", answer: "Consultez le suivi en temps reel dans \"Mes colis\". Si le retard depasse 48 heures, contactez notre support via WhatsApp.", icon: HelpCircle },
-  { question: "Comment fonctionne le COD ?", answer: "Lors de la creation du colis, activez l'option COD et indiquez le montant. Le destinataire paie au point relais. Le montant vous est reverse sous 24 heures.", icon: CreditCard },
+  { question: "Comment fonctionne le paiement a la livraison ?", answer: "Lors de la creation du colis, choisissez le moyen de paiement \"Paiement a la livraison\" a la derniere etape. Le destinataire paie au point relais au moment du retrait. Le montant vous est reverse sous 24 heures.", icon: CreditCard },
   { question: "Comment obtenir une facture ?", answer: "Les factures sont generees automatiquement chaque mois. Allez dans \"Factures\" pour les consulter et les telecharger au format PDF.", icon: BookOpen },
 ];
 

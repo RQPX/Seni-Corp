@@ -47,6 +47,13 @@ export function generateCodeRetrait(): string {
 }
 
 
+// -- Formater une date ISO en DD/MM/YYYY (affichage) --
+export function formatDateFr(iso: string): string {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString("fr-FR");
+}
+
+
 // -- Tronquer un texte avec ellipse --
 export function truncate(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text;

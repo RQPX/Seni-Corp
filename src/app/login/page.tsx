@@ -28,12 +28,13 @@ const C = {
   border: "#EAE3D5", white: "#FFFFFF",
 };
 
-// -- Identifiants de demonstration --
-// Utilisables UNIQUEMENT en developpement (NODE_ENV=development)
-// En production, ces valeurs sont ignorees (voir handleSubmit)
-const DEMO_EMAIL    = process.env.NEXT_PUBLIC_DEMO_EMAIL    ?? "demo@senicorp.ci";
-const DEMO_PASSWORD = process.env.NEXT_PUBLIC_DEMO_PASSWORD ?? "SeniDemo2026";
+// -- Mode demo --
+// Aucune valeur par defaut : si les variables ne sont pas definies,
+// le mode demo n'existe pas. Ne jamais committer d'identifiants.
+const DEMO_EMAIL    = process.env.NEXT_PUBLIC_DEMO_EMAIL;
+const DEMO_PASSWORD = process.env.NEXT_PUBLIC_DEMO_PASSWORD;
 const isDevMode     = process.env.NODE_ENV === "development";
+const demoEnabled   = isDevMode && !!DEMO_EMAIL && !!DEMO_PASSWORD;
 
 // -- Rate limiting : constantes --
 const MAX_ATTEMPTS = 5;              // nombre max de tentatives
@@ -165,8 +166,8 @@ function LoginPageInner() {
     }
 
     // -- Validation basique cote client --
-    if (password.length < 6) {
-      setError("Le mot de passe doit contenir au moins 6 caracteres.");
+    if (password.length < 8) {
+      setError("Le mot de passe doit contenir au moins 8 caracteres.");
       return;
     }
 
@@ -179,11 +180,11 @@ function LoginPageInner() {
 
     setLoading(true);
 
-    // -- Mode demo (uniquement en dev) --
-    // En production, on n'accepte JAMAIS les identifiants demo hardcodes
-    if (isDevMode && email === DEMO_EMAIL && password === DEMO_PASSWORD) {
+    // -- Mode demo (dev uniquement, et seulement si configure) --
+    if (demoEnabled && email === DEMO_EMAIL && password === DEMO_PASSWORD) {
       clearAttempts();
-      setTimeout(() => router.push("/dashboard"), 300);
+      setLoading(false);            // <- manquait : loading restait bloque
+      router.push("/dashboard");
       return;
     }
 
@@ -225,7 +226,7 @@ function LoginPageInner() {
         backgroundColor: C.ivory,
         // dvh pour bien s'adapter sur iOS
         minHeight: "100dvh",
-        maxWidth: "100vw",
+        maxWidth: "100%",
         overflowX: "hidden",
       }}
     >
@@ -441,13 +442,13 @@ function LoginPageInner() {
         </p>
 
         {/* Bandeau demo (uniquement en dev) */}
-        {isDevMode && (
+        {demoEnabled && (
           <div
             className="mt-6 rounded-lg text-center"
             style={{ padding: "10px", backgroundColor: C.successSoft, border: `1px dashed ${C.success}` }}
           >
             <p style={{ fontSize: "11px", color: C.success, fontWeight: 600 }}>
-              Mode developpement — Demo : {DEMO_EMAIL} / {DEMO_PASSWORD}
+              Mode developpement — compte de demonstration actif
             </p>
           </div>
         )}

@@ -89,7 +89,8 @@
 
 html {
   font-family: var(--font-body);
-  font-size: 14px;
+  /* Pas de font-size en px sur html : on respecte le reglage du navigateur.
+     Les tailles de texte sont definies dans tailwind.config.ts (fontSize). */
   line-height: 1.6;
   color: var(--color-anthracite);
   background-color: var(--color-ivory);
@@ -99,9 +100,10 @@ html {
   -moz-osx-font-smoothing: grayscale;
 
   /* -- Anti-debordement horizontal -- */
-  /* Empeche tout scroll a droite / gauche au niveau racine */
-  overflow-x: hidden;
-  max-width: 100vw;
+  /* clip et non hidden : hidden cree un conteneur de defilement et est peu
+     fiable sur iOS Safari (on peut encore pousser la page au doigt) */
+  overflow-x: clip;
+  max-width: 100%;         /* 100% et non 100vw : exclut la barre de defilement */
   width: 100%;
 
   /* Empeche le zoom involontaire sur iOS quand on tourne le telephone */
@@ -115,19 +117,21 @@ body {
   min-height: 100dvh;
 
   /* -- Anti-debordement horizontal (double garantie) -- */
-  overflow-x: hidden;
-  max-width: 100vw;
+  overflow-x: clip;
+  max-width: 100%;
   width: 100%;
 
   /* Empeche l'effet "bounce" sur iOS quand on tire la page */
   overscroll-behavior: none;
 
-  /* Amelioration du touch : pas de delai de 300ms au tap */
-  touch-action: manipulation;
+  /* Retire le delai de 300ms sans desactiver le zoom par double tap.
+     (le delai n'existe plus sur les navigateurs a jour avec un viewport correct) */
+  touch-action: pan-x pan-y pinch-zoom;
 
-  /* Prend en compte l'encoche iPhone en haut/bas */
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
+  /* Pas de padding d'encoche ici : chaque barre fixe gere son propre
+     safe-area (voir dashboard/layout.tsx). Le body fait deja 100dvh ;
+     lui ajouter les marges d'encoche depassait la hauteur de l'ecran
+     et causait un double defilement vertical sur iOS. */
 }
 
 /* -- Regle importante pour les elements qui pourraient deborder -- */

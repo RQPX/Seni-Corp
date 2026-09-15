@@ -15,10 +15,12 @@ import { useSearchParams } from "next/navigation";
 import { useAppStore, type ColisItem } from "@/store/appStore";
 import {
   Search, ChevronRight, CheckCircle2, MapPin,
-  Truck, Clock, Package, AlertTriangle, XCircle, Download,
+  Truck, Clock, Package, AlertTriangle, XCircle, RotateCcw, Download,
   X, ArrowLeft, Copy, Phone
 } from "lucide-react";
 import { FilterTabs, type FilterOption } from "@/components/ui/FilterTabs";
+import { STATUTS, statutConfig } from "@/lib/statuts";
+import { formatDateFr } from "@/lib/utils";
 
 const C = {
   emerald: "#0B4D3F", emeraldLight: "#1A6B58", emeraldSoft: "#E8F0ED",
@@ -29,22 +31,27 @@ const C = {
   warning: "#B88838", warningSoft: "#FEF3E5", white: "#FFFFFF",
 };
 
-// Configuration des statuts (etiquette, couleur, icone)
-const STATUTS: Record<string, { label: string; bg: string; color: string; icon: typeof Clock }> = {
-  tous:    { label: "Tous",       bg: C.sage,        color: C.taupe,        icon: Package },
-  cree:    { label: "Cree",       bg: C.sage,        color: C.taupe,        icon: Clock },
-  transit: { label: "En transit", bg: C.bronzeSoft,  color: C.bronze,       icon: Truck },
-  relais:  { label: "Au relais",  bg: C.emeraldSoft, color: C.emeraldLight, icon: MapPin },
-  livre:   { label: "Livre",      bg: C.emeraldSoft, color: C.success,      icon: CheckCircle2 },
-  retarde: { label: "Retarde",    bg: C.warningSoft, color: C.warning,      icon: AlertTriangle },
-  annule:  { label: "Annule",     bg: C.terraSoft,   color: C.terra,        icon: XCircle },
+// Icone de chaque statut (couleurs et libelle lus depuis statutConfig)
+const STATUT_ICONS: Record<string, typeof Clock> = {
+  cree:       Clock,
+  pris:       Package,
+  transit:    Truck,
+  arrive_hub: MapPin,
+  attente:    MapPin,
+  livraison:  Truck,
+  livre:      CheckCircle2,
+  retarde:    AlertTriangle,
+  incident:   AlertTriangle,
+  retourne:   RotateCcw,
+  perdu:      XCircle,
+  annule:     XCircle,
 };
 
 // -- Badge de statut (etiquette coloree avec icone) --
 function StatusBadge({ statut }: { statut: string }) {
-  const config = STATUTS[statut];
-  if (!config || statut === "tous") return null;
-  const Icon = config.icon;
+  if (statut === "tous") return null;
+  const config = statutConfig(statut);
+  const Icon = STATUT_ICONS[statut];
   return (
     <span
       className="inline-flex items-center gap-1.5 rounded-full"
@@ -55,7 +62,7 @@ function StatusBadge({ statut }: { statut: string }) {
         fontSize: "10px", fontWeight: 600, whiteSpace: "nowrap",
       }}
     >
-      <Icon size={11} strokeWidth={2} />
+      {Icon && <Icon size={11} strokeWidth={2} />}
       {config.label}
     </span>
   );
@@ -66,9 +73,9 @@ function StatusBadge({ statut }: { statut: string }) {
 function exportCSV(data: ColisItem[]) {
   const headers = ["Tracking", "Date", "Origine", "Destination", "Destinataire", "Telephone", "Poids", "Statut", "Montant XOF"];
   const rows = data.map((c) => [
-    c.tracking, c.date, c.origine, c.destination,
+    c.tracking, formatDateFr(c.createdAt), c.origine, c.destination,
     c.destinataire, c.telephone, c.poids,
-    STATUTS[c.statut]?.label || c.statut, c.montant.toString(),
+    statutConfig(c.statut).label, c.montant.toString(),
   ]);
   const csv = [headers.join(";"), ...rows.map((r) => r.join(";"))].join("\n");
   const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
@@ -108,7 +115,6 @@ function ColisPageInner() {
 
   // -- Filtrage : par statut ET par texte de recherche --
   const filtered = useMemo(() => {
-    setPage(1); // reset a la page 1 a chaque changement de filtre
     return colis.filter((c) => {
       if (activeFilter !== "tous" && c.statut !== activeFilter) return false;
       if (search) {
@@ -124,9 +130,15 @@ function ColisPageInner() {
     });
   }, [search, activeFilter, colis]);
 
+  // Retour a la page 1 quand le filtre ou la recherche change
+  useEffect(() => { setPage(1); }, [search, activeFilter]);
+
   // Pagination
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
-  const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
+  // Garde-fou : si la liste retrecit, on ne reste pas sur une page vide
+  const safePage = Math.min(page, totalPages);
+  const paginated = filtered.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE);
 
   // Compteurs par statut (affiches dans les filtres)
   const counts = useMemo(() => {
@@ -138,11 +150,14 @@ function ColisPageInner() {
   }, [colis]);
 
   // -- Options du composant FilterTabs --
-  const filterOptions: FilterOption[] = Object.entries(STATUTS).map(([key, config]) => ({
-    value: key,
-    label: config.label,
-    count: counts[key] || 0,
-  }));
+  const filterOptions: FilterOption[] = [
+    { value: "tous", label: "Tous", count: counts.tous || 0 },
+    ...Object.entries(STATUTS).map(([key, config]) => ({
+      value: key,
+      label: config.label,
+      count: counts[key] || 0,
+    })),
+  ];
 
   return (
     <div
@@ -279,7 +294,7 @@ function ColisPageInner() {
                       {colis.tracking}
                     </span>
                   </td>
-                  <td style={{ padding: "12px 16px", fontSize: "12px", color: C.taupe }}>{colis.date}</td>
+                  <td style={{ padding: "12px 16px", fontSize: "12px", color: C.taupe }}>{formatDateFr(colis.createdAt)}</td>
                   <td style={{ padding: "12px 16px", fontSize: "13px", color: C.anthracite }}>
                     <strong>{colis.origine}</strong>
                     <span style={{ color: C.bronze, margin: "0 6px" }}>{"\u2192"}</span>
@@ -311,40 +326,40 @@ function ColisPageInner() {
           <span style={{ fontSize: "12px", color: C.taupe }}>
             {filtered.length === 0
               ? "0 colis"
-              : `${(page - 1) * PER_PAGE + 1}\u2013${Math.min(page * PER_PAGE, filtered.length)} sur ${filtered.length} colis`}
+              : `${(safePage - 1) * PER_PAGE + 1}\u2013${Math.min(safePage * PER_PAGE, filtered.length)} sur ${filtered.length} colis`}
           </span>
           {totalPages > 1 && (
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
+                disabled={safePage === 1}
                 className="rounded-lg"
                 style={{
                   padding: "8px 14px", fontSize: "12px", fontWeight: 600,
                   fontFamily: "var(--font-heading)",
-                  backgroundColor: page === 1 ? C.sage : C.white,
+                  backgroundColor: safePage === 1 ? C.sage : C.white,
                   border: `1px solid ${C.border}`,
-                  color: page === 1 ? C.taupeLight : C.taupe,
-                  cursor: page === 1 ? "not-allowed" : "pointer",
+                  color: safePage === 1 ? C.taupeLight : C.taupe,
+                  cursor: safePage === 1 ? "not-allowed" : "pointer",
                   minHeight: "40px",
                 }}
               >
                 Precedent
               </button>
               <span style={{ fontSize: "12px", color: C.taupe, padding: "0 4px" }}>
-                {page} / {totalPages}
+                {safePage} / {totalPages}
               </span>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
+                disabled={safePage === totalPages}
                 className="rounded-lg"
                 style={{
                   padding: "8px 14px", fontSize: "12px", fontWeight: 600,
                   fontFamily: "var(--font-heading)",
-                  backgroundColor: page === totalPages ? C.sage : C.emerald,
+                  backgroundColor: safePage === totalPages ? C.sage : C.emerald,
                   border: "none",
-                  color: page === totalPages ? C.taupeLight : C.white,
-                  cursor: page === totalPages ? "not-allowed" : "pointer",
+                  color: safePage === totalPages ? C.taupeLight : C.white,
+                  cursor: safePage === totalPages ? "not-allowed" : "pointer",
                   minHeight: "40px",
                 }}
               >
@@ -367,8 +382,8 @@ function ColisPageInner() {
           <div
             className="fixed top-0 right-0 z-[70]"
             style={{
-              width: "min(440px, 100vw)",
-              maxWidth: "100vw",
+              width: "min(440px, 100%)",
+              maxWidth: "100%",
               // Utilise dvh pour bien s'adapter aux barres iOS
               height: "100dvh",
               backgroundColor: C.white,
@@ -426,7 +441,7 @@ function ColisPageInner() {
               <div className="rounded-xl" style={{ border: `1px solid ${C.border}`, overflow: "hidden" }}>
                 {[
                   { label: "Trajet",       value: `${selectedColis.origine} \u2192 ${selectedColis.destination}` },
-                  { label: "Date",         value: selectedColis.date },
+                  { label: "Date",         value: formatDateFr(selectedColis.createdAt) },
                   { label: "Service",      value: selectedColis.service },
                   { label: "Poids",        value: selectedColis.poids },
                   { label: "Contenu",      value: selectedColis.contenu },

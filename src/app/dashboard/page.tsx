@@ -18,6 +18,8 @@ import {
   ResponsiveContainer, CartesianGrid
 } from "recharts";
 import { FilterTabs } from "@/components/ui/FilterTabs";
+import { statutConfig } from "@/lib/statuts";
+import { formatDateFr } from "@/lib/utils";
 
 // Palette de la marque
 const C = {
@@ -31,31 +33,30 @@ const C = {
 // Mois en francais pour le graphique
 const MOIS = ["jan","fev","mar","avr","mai","jun","jul","aou","sep","oct","nov","dec"];
 
-// Configuration visuelle de chaque statut
-const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string; icon: typeof Clock }> = {
-  livre:   { label: "Livre",      bg: C.emeraldSoft, color: C.success,      icon: CheckCircle2 },
-  relais:  { label: "Au relais",  bg: C.emeraldSoft, color: C.emeraldLight, icon: MapPin },
-  transit: { label: "En transit", bg: C.bronzeSoft,  color: C.bronze,       icon: Truck },
-  cree:    { label: "Cree",       bg: C.sage,        color: C.taupe,        icon: Clock },
-  retarde: { label: "Retarde",    bg: "#FEF3E5",     color: "#B88838",      icon: AlertTriangle },
-  annule:  { label: "Annule",     bg: "#FCEEE9",     color: C.terra,        icon: XCircle },
-  retourne:{ label: "Retourne",   bg: "#FCEEE9",     color: C.terra,        icon: RotateCcw },
+// Icone de chaque statut (couleurs et libelle lus depuis statutConfig)
+const STATUT_ICONS: Record<string, typeof Clock> = {
+  livre:      CheckCircle2,
+  attente:    MapPin,
+  transit:    Truck,
+  cree:       Clock,
+  retarde:    AlertTriangle,
+  annule:     XCircle,
+  retourne:   RotateCcw,
 };
 
 // Options du filtre affichees en haut du tableau
 const FILTER_OPTIONS = [
   { value: "tous",    label: "Tous" },
   { value: "livre",   label: "Livres" },
-  { value: "relais",  label: "Au relais" },
+  { value: "attente", label: "En attente retrait" },
   { value: "transit", label: "En transit" },
   { value: "cree",    label: "Crees" },
 ];
 
 // -- Petit badge colore selon le statut --
 function StatusBadge({ statut }: { statut: string }) {
-  const config = STATUS_CONFIG[statut];
-  if (!config) return null;
-  const Icon = config.icon;
+  const config = statutConfig(statut);
+  const Icon = STATUT_ICONS[statut];
   return (
     <span
       className="inline-flex items-center gap-1.5 rounded-full"
@@ -69,7 +70,7 @@ function StatusBadge({ statut }: { statut: string }) {
         whiteSpace: "nowrap",
       }}
     >
-      <Icon size={11} strokeWidth={2} />
+      {Icon && <Icon size={11} strokeWidth={2} />}
       {config.label}
     </span>
   );
@@ -176,32 +177,45 @@ export default function DashboardPage() {
 
   // -- Donnees du graphique : 14 derniers jours --
   const chartData = useMemo(() => {
+    // Cle stable AAAA-MM-JJ, insensible au format d'affichage
+    const dayKey = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+    // On compte une seule fois, en O(n) au lieu de 14 filtres
+    const parJour = new Map<string, number>();
+    colis.forEach((c) => {
+      const d = new Date(c.createdAt);
+      if (isNaN(d.getTime())) return;          // date invalide : on ignore
+      const k = dayKey(d);
+      parJour.set(k, (parJour.get(k) ?? 0) + 1);
+    });
+
     const today = new Date();
     return Array.from({ length: 14 }, (_, i) => {
       const d = new Date(today);
       d.setDate(today.getDate() - (13 - i));
-      const dd = String(d.getDate()).padStart(2, "0");
-      const mm = String(d.getMonth() + 1).padStart(2, "0");
-      const yyyy = d.getFullYear();
-      const dateStr = `${dd}/${mm}/${yyyy}`;
-      const count = colis.filter((c) => c.date === dateStr).length;
-      // Etiquette : premier jour = jour + mois, dernier = "Auj.", autres = numero
-      const jour = i === 0 ? `${d.getDate()} ${MOIS[d.getMonth()]}` : i === 13 ? "Auj." : String(d.getDate());
-      return { jour, colis: count };
+      const jour = i === 13 ? "Auj."
+        : i === 0 ? `${d.getDate()} ${MOIS[d.getMonth()]}`
+        : String(d.getDate());
+      return { jour, colis: parJour.get(dayKey(d)) ?? 0 };
     });
   }, [colis]);
 
   // -- Activite recente : fusion colis + transactions triee par date --
   const recentActivity = useMemo(() => {
+    // Accepte "27/04/2026" et "27/04/2026 10:15"
     const parseDate = (s: string) => {
-      const [d, m, y] = s.split("/");
-      return isNaN(+d) ? 0 : new Date(+y, +m - 1, +d).getTime();
+      const [datePart, timePart] = String(s).trim().split(" ");
+      const [d, m, y] = datePart.split("/").map(Number);
+      const [hh = 0, mn = 0] = (timePart ?? "").split(":").map(Number);
+      const t = new Date(y, m - 1, d, hh, mn).getTime();
+      return Number.isNaN(t) ? 0 : t;
     };
     const items = [
       ...colis.slice(0, 5).map((c) => ({
         key: c.tracking, tracking: c.tracking,
         action: `cree — ${c.origine} vers ${c.destination}`,
-        date: c.date, dotColor: C.emerald,
+        date: formatDateFr(c.createdAt), dotColor: C.emerald,
       })),
       ...transactions.slice(0, 5).map((tx) => ({
         key: String(tx.id), tracking: "",
@@ -214,7 +228,7 @@ export default function DashboardPage() {
 
   // -- Pourcentage de colis livres --
   const livresPercent = useMemo(() => {
-    if (colis.length === 0) return 100;
+    if (colis.length === 0) return 0;
     const livres = colis.filter((c) => c.statut === "livre").length;
     return Math.round((livres / colis.length) * 100);
   }, [colis]);
@@ -245,7 +259,7 @@ export default function DashboardPage() {
             trendLabel={colis.length > 0 ? `${colis.length} colis au total` : "Aucun colis pour l'instant"}
           />
           <KpiCard
-            label="Livres a temps"
+            label="Colis livres"
             value={livresPercent.toString()}
             unit="%"
             trendLabel={`${colis.filter(c => c.statut === "livre").length} colis livres`}

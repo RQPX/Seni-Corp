@@ -16,7 +16,7 @@ export type ColisItem = {
   telephone: string;
   statut: string;
   montant: number;
-  date: string;
+  createdAt: string; // ISO, formater a l'affichage (voir formatDateFr)
   poids: string;
   contenu: string;
   service: string;
@@ -33,16 +33,16 @@ export type Transaction = {
 
 // -- Donnees de demonstration initiales --
 const DEMO_COLIS: ColisItem[] = [
-  { tracking: "SC-2026-A8K4M2", origine: "Abidjan",  destination: "Korhogo",      destinataire: "Fatou Diallo",      telephone: "+225 07 89 12 34", statut: "livre",   montant: 3200, date: "27/04/2026", poids: "2,5 kg", contenu: "Vetements (3 ensembles)",  service: "Point relais" },
-  { tracking: "SC-2026-B2F7N9", origine: "Abidjan",  destination: "Bouake",       destinataire: "Mamadou Toure",     telephone: "+225 05 67 89 01", statut: "relais",  montant: 2100, date: "27/04/2026", poids: "1,2 kg", contenu: "Accessoires telephone",     service: "Point relais" },
-  { tracking: "SC-2026-C5R3X1", origine: "Abidjan",  destination: "Yamoussoukro", destinataire: "Adjoua Kouassi",    telephone: "+225 07 45 23 67", statut: "transit", montant: 1800, date: "26/04/2026", poids: "3,0 kg", contenu: "Cosmetiques",              service: "Livraison domicile" },
-  { tracking: "SC-2026-D9P2L8", origine: "Abidjan",  destination: "San-Pedro",    destinataire: "Aminata Bamba",     telephone: "+225 01 23 45 67", statut: "cree",    montant: 2500, date: "27/04/2026", poids: "0,8 kg", contenu: "Bijoux",                   service: "Point relais" },
-  { tracking: "SC-2026-E4Q8M3", origine: "Korhogo",  destination: "Abidjan",      destinataire: "Jean-Luc Assi",     telephone: "+225 07 98 76 54", statut: "transit", montant: 1950, date: "26/04/2026", poids: "1,5 kg", contenu: "Tissu Pagne",              service: "Point relais" },
-  { tracking: "SC-2026-F7H2K5", origine: "Abidjan",  destination: "Bouake",       destinataire: "Awa Traore",        telephone: "+225 05 11 22 33", statut: "livre",   montant: 1600, date: "25/04/2026", poids: "0,5 kg", contenu: "Documents",                service: "Point relais" },
-  { tracking: "SC-2026-G3L9N1", origine: "Abidjan",  destination: "Daloa",        destinataire: "Salimata Diomande", telephone: "+225 07 44 55 66", statut: "retarde", montant: 2800, date: "24/04/2026", poids: "4,2 kg", contenu: "Pieces detachees",         service: "Livraison domicile" },
-  { tracking: "SC-2026-H6T4P9", origine: "Bouake",   destination: "Korhogo",      destinataire: "Issouf Ouattara",   telephone: "+225 05 77 88 99", statut: "livre",   montant: 1400, date: "24/04/2026", poids: "1,0 kg", contenu: "Chaussures",               service: "Point relais" },
-  { tracking: "SC-2026-I8R2M4", origine: "Abidjan",  destination: "Korhogo",      destinataire: "Kadiatou Kone",     telephone: "+225 07 33 44 55", statut: "annule",  montant: 3500, date: "23/04/2026", poids: "5,0 kg", contenu: "Electronique",             service: "Livraison domicile" },
-  { tracking: "SC-2026-J9F3K7", origine: "Abidjan",  destination: "Bouake",       destinataire: "Ibrahim Coulibaly", telephone: "+225 01 66 77 88", statut: "livre",   montant: 1750, date: "23/04/2026", poids: "2,0 kg", contenu: "Alimentaire",              service: "Point relais" },
+  { tracking: "SC-2026-A8K4M2", origine: "Abidjan",  destination: "Korhogo",      destinataire: "Fatou Diallo",      telephone: "+225 07 89 12 34", statut: "livre",   montant: 3200, createdAt: "2026-04-27", poids: "2,5 kg", contenu: "Vetements (3 ensembles)",  service: "Point relais" },
+  { tracking: "SC-2026-B2F7N9", origine: "Abidjan",  destination: "Bouake",       destinataire: "Mamadou Toure",     telephone: "+225 05 67 89 01", statut: "attente", montant: 2100, createdAt: "2026-04-27", poids: "1,2 kg", contenu: "Accessoires telephone",     service: "Point relais" },
+  { tracking: "SC-2026-C5R3X1", origine: "Abidjan",  destination: "Yamoussoukro", destinataire: "Adjoua Kouassi",    telephone: "+225 07 45 23 67", statut: "transit", montant: 1800, createdAt: "2026-04-26", poids: "3,0 kg", contenu: "Cosmetiques",              service: "Livraison domicile" },
+  { tracking: "SC-2026-D9P2L8", origine: "Abidjan",  destination: "San-Pedro",    destinataire: "Aminata Bamba",     telephone: "+225 01 23 45 67", statut: "cree",    montant: 2500, createdAt: "2026-04-27", poids: "0,8 kg", contenu: "Bijoux",                   service: "Point relais" },
+  { tracking: "SC-2026-E4Q8M3", origine: "Korhogo",  destination: "Abidjan",      destinataire: "Jean-Luc Assi",     telephone: "+225 07 98 76 54", statut: "transit", montant: 1950, createdAt: "2026-04-26", poids: "1,5 kg", contenu: "Tissu Pagne",              service: "Point relais" },
+  { tracking: "SC-2026-F7H2K5", origine: "Abidjan",  destination: "Bouake",       destinataire: "Awa Traore",        telephone: "+225 05 11 22 33", statut: "livre",   montant: 1600, createdAt: "2026-04-25", poids: "0,5 kg", contenu: "Documents",                service: "Point relais" },
+  { tracking: "SC-2026-G3L9N1", origine: "Abidjan",  destination: "Daloa",        destinataire: "Salimata Diomande", telephone: "+225 07 44 55 66", statut: "retarde", montant: 2800, createdAt: "2026-04-24", poids: "4,2 kg", contenu: "Pieces detachees",         service: "Livraison domicile" },
+  { tracking: "SC-2026-H6T4P9", origine: "Bouake",   destination: "Korhogo",      destinataire: "Issouf Ouattara",   telephone: "+225 05 77 88 99", statut: "livre",   montant: 1400, createdAt: "2026-04-24", poids: "1,0 kg", contenu: "Chaussures",               service: "Point relais" },
+  { tracking: "SC-2026-I8R2M4", origine: "Abidjan",  destination: "Korhogo",      destinataire: "Kadiatou Kone",     telephone: "+225 07 33 44 55", statut: "annule",  montant: 3500, createdAt: "2026-04-23", poids: "5,0 kg", contenu: "Electronique",             service: "Livraison domicile" },
+  { tracking: "SC-2026-J9F3K7", origine: "Abidjan",  destination: "Bouake",       destinataire: "Ibrahim Coulibaly", telephone: "+225 01 66 77 88", statut: "livre",   montant: 1750, createdAt: "2026-04-23", poids: "2,0 kg", contenu: "Alimentaire",              service: "Point relais" },
 ];
 
 const DEMO_TRANSACTIONS: Transaction[] = [
@@ -76,7 +76,8 @@ type AppStore = {
   addColis: (colis: ColisItem) => void;
 
   // Debite le solde et enregistre la transaction correspondante
-  deductSolde: (amount: number, tracking: string) => void;
+  // Retourne false si le solde est insuffisant : l'appelant doit gerer le refus
+  deductSolde: (amount: number, tracking: string) => boolean;
 
   // Credite le solde et enregistre la transaction de recharge
   rechargeSolde: (amount: number, method: string) => void;
@@ -84,7 +85,7 @@ type AppStore = {
 
 export const useAppStore = create<AppStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       colis: DEMO_COLIS,
       solde: 87500,
       transactions: DEMO_TRANSACTIONS,
@@ -92,9 +93,11 @@ export const useAppStore = create<AppStore>()(
       addColis: (colis) =>
         set((state) => ({ colis: [colis, ...state.colis] })),
 
-      deductSolde: (amount, tracking) =>
-        set((state) => ({
-          solde: Math.max(0, state.solde - amount),
+      deductSolde: (amount, tracking) => {
+        const state = get();
+        if (state.solde < amount) return false;
+        set({
+          solde: state.solde - amount,
           transactions: [
             {
               id: Date.now(),
@@ -106,7 +109,9 @@ export const useAppStore = create<AppStore>()(
             },
             ...state.transactions,
           ],
-        })),
+        });
+        return true;
+      },
 
       rechargeSolde: (amount, method) =>
         set((state) => ({

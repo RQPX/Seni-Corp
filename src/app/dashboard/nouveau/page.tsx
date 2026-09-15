@@ -10,12 +10,13 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   MapPin, Package, User, CreditCard, ChevronRight, ChevronLeft,
   Check, Truck, Home, CheckCircle2
 } from "lucide-react";
 import { useAppStore } from "@/store/appStore";
+import { calculerPrix } from "@/lib/api";
 
 const C = {
   emerald: "#0B4D3F", emeraldDark: "#083528", emeraldSoft: "#E8F0ED",
@@ -27,15 +28,6 @@ const C = {
 
 // Villes desservies au demarrage
 const VILLES = ["Abidjan", "Bouake", "Korhogo", "Yamoussoukro", "San-Pedro", "Daloa"];
-
-// Tarifs de base par trajet (XOF)
-// A remplacer par un appel API /tarifs/calculer plus tard
-const TARIF_BASE: Record<string, number> = {
-  "Abidjan-Bouake": 1800, "Abidjan-Korhogo": 2800, "Abidjan-Yamoussoukro": 1500,
-  "Abidjan-San-Pedro": 2200, "Abidjan-Daloa": 2000, "Bouake-Korhogo": 1600,
-  "Bouake-Yamoussoukro": 1200, "Korhogo-Abidjan": 2800, "Bouake-Abidjan": 1800,
-  "San-Pedro-Abidjan": 2200,
-};
 
 // Les 4 etapes du formulaire
 const STEPS = [
@@ -52,12 +44,6 @@ function genTracking(): string {
   return 'SC-2026-' + Array.from({ length: 6 }, () =>
     chars[Math.floor(Math.random() * chars.length)]
   ).join('');
-}
-
-// -- Formate la date du jour en DD/MM/YYYY --
-function todayStr(): string {
-  const d = new Date();
-  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
 }
 
 // -- Style commun de tous les champs de formulaire --
@@ -121,39 +107,71 @@ export default function NouveauColisPage() {
     { id: "cod",      label: "Paiement a la livraison",   desc: "Le destinataire paie au retrait" },
   ];
 
-  // -- Calcule le tarif total --
-  const calculerTarif = () => {
-    if (!destination) return 0;
-    const base = TARIF_BASE[`${origine}-${destination}`] || 2000;
-    const supplement = service === "domicile" ? 1500 : 0;
-    // Poids : au-dela de 2kg, on facture 200 XOF par kg supplementaire
-    const poidsNum = parseFloat(poids.replace(",", ".")) || 1;
-    const suppPoids = poidsNum > 2 ? Math.ceil(poidsNum - 2) * 200 : 0;
-    return base + supplement + suppPoids;
-  };
+  // -- Tarif calcule par le backend (source unique de verite) --
+  const [tarif, setTarif] = useState<number | null>(null);
+  const [tarifLoading, setTarifLoading] = useState(false);
+  const [tarifError, setTarifError] = useState("");
 
-  const tarif = calculerTarif();
+  // -- Validation stricte du poids saisi --
+  const poidsNum = parseFloat(poids.replace(",", "."));
+  const poidsValide = Number.isFinite(poidsNum) && poidsNum > 0 && poidsNum <= 50;
+
+  useEffect(() => {
+    if (!destination || !poidsValide) {
+      setTarif(null);
+      return;
+    }
+
+    let annule = false;
+    setTarifLoading(true);
+    setTarifError("");
+    calculerPrix(origine, destination, poidsNum)
+      .then((r) => { if (!annule) setTarif(r.prix); })
+      .catch(() => { if (!annule) { setTarif(null); setTarifError("Tarif indisponible, reessaie."); } })
+      .finally(() => { if (!annule) setTarifLoading(false); });
+
+    // Evite d'appliquer une reponse obsolete si l'utilisateur change vite de trajet
+    return () => { annule = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [origine, destination, poids, service]);
 
   // -- Validation : peut-on passer a l'etape suivante ? --
   const canNext = step === 1 ? !!destination && destination !== origine
     : step === 2 ? true
-    : step === 3 ? !!poids
+    : step === 3 ? poidsValide
     : !!nomDest && !!telDest;
+
+  const [payError, setPayError] = useState("");
+  const soldeInsuffisant = paymentMethod === "solde" && tarif !== null && solde < tarif;
 
   // -- Ouvre la modale de confirmation de paiement --
   const handlePay = () => {
+    if (soldeInsuffisant) {
+      setPayError(`Solde insuffisant : ${solde.toLocaleString("fr")} XOF disponibles pour ${tarif!.toLocaleString("fr")} XOF. Recharge ton compte ou choisis CinetPay.`);
+      return;
+    }
+    setPayError("");
     setShowConfirm(true);
     setPaymentStatus("idle");
   };
 
   // -- Confirme le paiement et cree le colis --
   const confirmPayment = () => {
+    if (tarif === null) return; // le bouton est desactive dans ce cas, garde-fou
     setPaymentStatus("loading");
     const tracking = genTracking();
 
     // Simule le delai d'un appel API paiement
     // TODO : remplacer par un vrai appel API (Wave / CinetPay webhook)
     setTimeout(() => {
+      // Debite le solde uniquement si l'utilisateur a choisi cette option
+      // Si le solde est devenu insuffisant entre-temps, on refuse sans creer le colis
+      if (paymentMethod === "solde" && !deductSolde(tarif, tracking)) {
+        setPaymentStatus("idle");
+        setPayError(`Solde insuffisant : ${solde.toLocaleString("fr")} XOF disponibles pour ${tarif.toLocaleString("fr")} XOF. Recharge ton compte ou choisis CinetPay.`);
+        return;
+      }
+
       addColis({
         tracking,
         origine,
@@ -162,16 +180,11 @@ export default function NouveauColisPage() {
         telephone: telDest,
         statut: "cree",
         montant: tarif,
-        date: todayStr(),
+        createdAt: new Date().toISOString(),
         poids: `${poids} kg`,
         contenu: contenu || "Non specifie",
         service: service === "relais" ? "Point relais" : "Livraison domicile",
       });
-
-      // Debite le solde uniquement si l'utilisateur a choisi cette option
-      if (paymentMethod === "solde") {
-        deductSolde(tarif, tracking);
-      }
 
       setNewTracking(tracking);
       setPaymentStatus("done");
@@ -189,6 +202,7 @@ export default function NouveauColisPage() {
     setContenu("");
     setPaymentStatus("idle");
     setNewTracking("");
+    setPayError("");
   };
 
 
@@ -272,7 +286,11 @@ export default function NouveauColisPage() {
                 <Field label="Ville d'origine">
                   <select
                     value={origine}
-                    onChange={(e) => setOrigine(e.target.value)}
+                    onChange={(e) => {
+                      setOrigine(e.target.value);
+                      // La destination ne peut pas rester egale a la nouvelle origine
+                      if (destination === e.target.value) setDestination("");
+                    }}
                     style={inputStyle}
                     aria-label="Ville d'origine"
                   >
@@ -419,7 +437,7 @@ export default function NouveauColisPage() {
                       <button
                         type="button"
                         key={pm.id}
-                        onClick={() => setPaymentMethod(pm.id)}
+                        onClick={() => { setPaymentMethod(pm.id); setPayError(""); }}
                         className="text-left rounded-xl p-4"
                         style={{
                           border: `2px solid ${paymentMethod === pm.id ? C.emerald : C.border}`,
@@ -444,6 +462,20 @@ export default function NouveauColisPage() {
             {step === 4 && !canNext && (
               <p style={{ fontSize: "11px", color: C.taupeLight, marginTop: "16px" }}>
                 Renseigne le nom et le telephone du destinataire pour continuer.
+              </p>
+            )}
+
+            {/* Erreur de calcul du tarif (backend indisponible) */}
+            {step === 4 && tarifError && (
+              <p style={{ fontSize: "11px", color: "#C66D4F", marginTop: "16px" }}>
+                {tarifError}
+              </p>
+            )}
+
+            {/* Refus de paiement (solde insuffisant) */}
+            {step === 4 && payError && (
+              <p style={{ fontSize: "11px", color: "#C66D4F", marginTop: "16px" }}>
+                {payError}
               </p>
             )}
 
@@ -489,19 +521,19 @@ export default function NouveauColisPage() {
                 <button
                   type="button"
                   onClick={handlePay}
-                  disabled={!canNext}
+                  disabled={!canNext || tarif === null || tarifLoading}
                   className="flex items-center gap-2 rounded-lg"
                   style={{
                     padding: "10px 20px", fontSize: "13px", fontWeight: 600,
-                    cursor: canNext ? "pointer" : "not-allowed",
-                    backgroundColor: canNext ? C.bronze : C.sage,
-                    color: canNext ? C.white : C.taupeLight,
+                    cursor: canNext && tarif !== null && !tarifLoading ? "pointer" : "not-allowed",
+                    backgroundColor: canNext && tarif !== null && !tarifLoading ? C.bronze : C.sage,
+                    color: canNext && tarif !== null && !tarifLoading ? C.white : C.taupeLight,
                     border: "none", fontFamily: "var(--font-heading)",
                     minHeight: "44px",
                   }}
                 >
                   <CreditCard size={15} />
-                  Payer
+                  {tarifLoading ? "Calcul du tarif..." : "Payer"}
                 </button>
               )}
             </div>
@@ -553,7 +585,7 @@ export default function NouveauColisPage() {
                 Total a payer
               </div>
               <div style={{ fontFamily: "var(--font-heading)", fontSize: "28px", fontWeight: 800, color: C.white }}>
-                {tarif > 0 ? tarif.toLocaleString("fr") : "\u2014"}
+                {tarifLoading ? "..." : tarif !== null ? tarif.toLocaleString("fr") : "\u2014"}
                 <span style={{ fontSize: "14px", fontWeight: 500, color: C.bronzeLight, marginLeft: "6px" }}>
                   XOF
                 </span>
@@ -583,7 +615,7 @@ export default function NouveauColisPage() {
                   Colis enregistre
                 </div>
                 <div style={{ fontSize: "13px", color: C.taupe, marginBottom: "4px" }}>
-                  Paiement de {tarif.toLocaleString("fr")} XOF confirme via{" "}
+                  Paiement de {tarif!.toLocaleString("fr")} XOF confirme via{" "}
                   {PAYMENT_METHODS.find(p => p.id === paymentMethod)?.label}.
                 </div>
                 <div style={{ fontFamily: "var(--font-mono)", fontSize: "18px", fontWeight: 700, color: C.emerald, margin: "16px 0" }}>
@@ -613,7 +645,7 @@ export default function NouveauColisPage() {
                 </div>
                 <div className="rounded-xl text-center mb-4" style={{ backgroundColor: C.emeraldSoft, padding: "14px" }}>
                   <div style={{ fontFamily: "var(--font-heading)", fontSize: "24px", fontWeight: 800, color: C.emerald }}>
-                    {tarif.toLocaleString("fr")} XOF
+                    {tarif!.toLocaleString("fr")} XOF
                   </div>
                   <div style={{ fontSize: "12px", color: C.taupe, marginTop: "4px" }}>
                     via {PAYMENT_METHODS.find(p => p.id === paymentMethod)?.label}

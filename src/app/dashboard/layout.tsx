@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
+import { logout as apiLogout } from "@/lib/api";
 
 // Palette de couleurs de la marque
 const C = {
@@ -62,10 +63,12 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   // Suivi de la derniere section pour afficher un titre de groupe une seule fois
   let lastSection = "";
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setShowLogoutConfirm(false);
-    // TODO : appeler l'API /auth/logout pour invalider le cookie httpOnly
-    router.push("/login");
+    // Invalide la session cote backend (efface le cookie httpOnly)
+    await apiLogout();
+    // replace() : empeche le retour arriere vers le dashboard
+    router.replace("/login");
   };
 
   return (
@@ -94,6 +97,9 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
           backgroundColor: C.emerald,
           // maxHeight avec dvh pour eviter les debordements sur iOS Safari
           maxHeight: "100dvh",
+          // La sidebar est en position fixed : elle ignore le padding du body
+          // (retire en C3), donc gere elle-meme l'encoche du haut sur iPhone
+          paddingTop: "env(safe-area-inset-top)",
         }}
       >
         {/* -- En-tete de la sidebar : logo + bouton fermer (mobile) -- */}
@@ -526,8 +532,10 @@ function BottomNav() {
         // Prend en compte l'encoche du bas sur iPhone
         paddingBottom: "env(safe-area-inset-bottom)",
         // Empeche le debordement horizontal
-        maxWidth: "100vw",
+        maxWidth: "100%",
         overflowX: "hidden",
+        // Laisse depasser le bouton rond "Nouveau" sans le rogner
+        overflowY: "visible",
       }}
     >
       {items.map((item) => {
@@ -566,10 +574,15 @@ function BottomNav() {
               <Icon size={20} strokeWidth={isActive ? 2.2 : 1.8} />
             )}
             <span style={{
-              fontSize: "9px",
+              fontSize: "10px",
+              lineHeight: 1.2,
               fontFamily: "var(--font-heading)",
               fontWeight: isActive ? 700 : 500,
               marginTop: isNew ? "2px" : "0",
+              // Tronque proprement au lieu de deborder
+              maxWidth: "100%",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
               whiteSpace: "nowrap",
             }}>
               {item.label}
@@ -623,7 +636,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         maxHeight: "100dvh",
         // -- FIX RESPONSIVE PRINCIPAL --
         // Force le layout a ne jamais depasser la largeur de l'ecran
-        maxWidth: "100vw",
+        maxWidth: "100%",
         width: "100%",
         overflowX: "hidden",
         backgroundColor: C.ivory,

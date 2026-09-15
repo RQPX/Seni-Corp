@@ -9,27 +9,30 @@ import {
   AlertTriangle, XCircle, RotateCcw, Home
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { colisStatuts } from "@/lib/tokens";
+import { statutConfig, type StatutColis } from "@/lib/statuts";
 
 // -- Configuration de chaque statut --
 // Associe un statut a son icone Lucide
 const STATUT_ICONS: Record<string, typeof Clock> = {
-  cree:      Clock,
-  pris:      Package,
-  transit:   Truck,
-  arrive:    MapPin,
-  livraison: Home,
-  livre:     CheckCircle2,
-  retarde:   AlertTriangle,
-  annule:    XCircle,
-  retourne:  RotateCcw,
+  cree:       Clock,
+  pris:       Package,
+  transit:    Truck,
+  arrive_hub: MapPin,
+  attente:    MapPin,
+  livraison:  Home,
+  livre:      CheckCircle2,
+  retarde:    AlertTriangle,
+  incident:   AlertTriangle,
+  retourne:   RotateCcw,
+  perdu:      XCircle,
+  annule:     XCircle,
 };
 
 
 // -- Props du composant --
 interface BadgeProps {
   // Mode 1 : badge de statut colis (utilise la config automatique)
-  statut?: keyof typeof colisStatuts;
+  statut?: StatutColis;
 
   // Mode 2 : badge libre avec variante de couleur
   variant?: "emerald" | "bronze" | "terra" | "sage" | "success";
@@ -59,9 +62,9 @@ export function Badge({ statut, variant, children, className }: BadgeProps) {
   let label: ReactNode;
   let Icon: typeof Clock | null = null;
 
-  if (statut && colisStatuts[statut]) {
-    // Mode statut : couleurs et icone automatiques
-    const config = colisStatuts[statut];
+  if (statut) {
+    // Mode statut : couleurs et icone automatiques (jamais d'exception sur un statut inconnu)
+    const config = statutConfig(statut);
     bg = config.bg;
     color = config.color;
     label = children || config.label;
