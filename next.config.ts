@@ -80,6 +80,21 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+
+  // -- Proxy vers le backend --
+  // Le backend pose des cookies httpOnly. Servis depuis un autre domaine
+  // (vercel.app vs railway.app) le navigateur les refuse : on passe donc
+  // l'API par notre propre domaine, ce qui les rend first-party.
+  // Effet de bord voulu : plus de CORS, et `connect-src 'self'` suffit.
+  async rewrites() {
+    const backend = process.env.BACKEND_ORIGIN ?? "http://localhost:3001";
+    return [
+      {
+        source: "/api/v1/:path*",
+        destination: `${backend}/api/v1/:path*`,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -5,6 +5,7 @@
 // ============================================================
 
 import type { Config } from "tailwindcss";
+import { colors } from "./src/lib/tokens";
 
 const config: Config = {
   content: [
@@ -16,41 +17,9 @@ const config: Config = {
 
       // -- Palette SENI CORP --
       // Classes generees : bg-emerald, text-bronze, border-sage, etc.
-      colors: {
-        emerald: {
-          DEFAULT: "#0B4D3F",
-          dark:    "#083528",
-          light:   "#1A6B58",
-          soft:    "#E8F0ED",
-        },
-        bronze: {
-          DEFAULT: "#B8935A",
-          light:   "#D4B486",
-          soft:    "#F5EFE3",
-        },
-        ivory:      "#FAF6F0",
-        sage: {
-          DEFAULT: "#E8EDE5",
-          dark:    "#D9E0D4",
-        },
-        anthracite: "#1A1A1A",
-        taupe: {
-          DEFAULT: "#6B6259",
-          light:   "#9B8A7E",
-        },
-        terra: {
-          DEFAULT: "#C66D4F",
-          soft:    "#FCEEE9",
-        },
-        border: {
-          DEFAULT:  "#EAE3D5",
-          strong:   "#D9D2C5",
-          subtle:   "#F0EBE0",
-        },
-        success:  "#4A6B5C",
-        warning:  "#B88838",
-        error:    "#A04A3C",
-      },
+      // Les valeurs viennent de src/lib/tokens.ts : une seule source pour
+      // les classes Tailwind et pour les styles en ligne des composants.
+      colors: { ...colors },
 
       // -- Polices personnalisees --
       // Classes generees : font-heading, font-body, font-mono

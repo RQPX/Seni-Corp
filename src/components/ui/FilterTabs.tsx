@@ -10,17 +10,7 @@
 
 import { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
-
-// Couleurs de la marque (extrait pour ce composant)
-const C = {
-  emerald: "#0B4D3F",
-  ivory: "#FAF6F0",
-  sage: "#E8EDE5",
-  white: "#FFFFFF",
-  border: "#EAE3D5",
-  taupe: "#6B6259",
-  anthracite: "#1A1A1A",
-};
+import { C } from "@/lib/tokens";
 
 // -- Structure d'une option de filtre --
 export type FilterOption = {
