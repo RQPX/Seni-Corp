@@ -26,24 +26,10 @@ export function formatMontant(montant: number): string {
 }
 
 
-// -- Generer un tracking number --
-// Format : SC-YYYY-XXXXXX (6 caracteres alphanumeriques)
-export function generateTrackingNumber(): string {
-  const year = new Date().getFullYear();
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // pas de I, O, 0, 1 (confusion)
-  let code = "";
-  for (let i = 0; i < 6; i++) {
-    code += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return `SC-${year}-${code}`;
-}
-
-
-// -- Generer un code retrait a 6 chiffres --
-// Utilise uniquement des chiffres, affiche par groupes de 3
-export function generateCodeRetrait(): string {
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
-  return code; // affichage : "458 291" fait cote interface
+// -- Formater un poids --
+// L'API renvoie des grammes en sortie mais accepte des kg en entree.
+export function formatPoids(grammes: number): string {
+  return `${(grammes / 1000).toLocaleString("fr", { maximumFractionDigits: 2 })} kg`;
 }
 
 

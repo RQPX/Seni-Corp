@@ -1,55 +1,46 @@
 // ============================================================
 // SENI CORP — Page "Mes colis"
-// Liste complete des colis du commercant.
-// L'utilisateur peut :
-//   - Rechercher par tracking, destinataire ou ville
-//   - Filtrer par statut (livre, en transit, retarde...)
-//   - Exporter la liste en CSV
-//   - Cliquer sur un colis pour voir son detail (panneau lateral)
+// Liste des colis du client connecte. La recherche, le filtre et la
+// pagination sont faits par le serveur : la page ne fait qu'afficher
+// ce que l'API renvoie.
 // ============================================================
 
 "use client";
 
-import { useState, useMemo, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { useAppStore, type ColisItem } from "@/store/appStore";
 import {
   Search, ChevronRight, CheckCircle2, MapPin,
   Truck, Clock, Package, AlertTriangle, XCircle, RotateCcw, Download,
   X, ArrowLeft, Copy, Phone
 } from "lucide-react";
 import { FilterTabs, type FilterOption } from "@/components/ui/FilterTabs";
-import { STATUTS, statutConfig } from "@/lib/statuts";
-import { formatDateFr } from "@/lib/utils";
-
-const C = {
-  emerald: "#0B4D3F", emeraldLight: "#1A6B58", emeraldSoft: "#E8F0ED",
-  bronze: "#B8935A", bronzeLight: "#D4B486", bronzeSoft: "#F5EFE3",
-  ivory: "#FAF6F0", sage: "#E8EDE5", anthracite: "#1A1A1A",
-  taupe: "#6B6259", taupeLight: "#9B8A7E", terra: "#C66D4F",
-  terraSoft: "#FCEEE9", border: "#EAE3D5", success: "#4A6B5C",
-  warning: "#B88838", warningSoft: "#FEF3E5", white: "#FFFFFF",
-};
+import { STATUTS, statutConfig, LABELS_SERVICE, type StatutColis } from "@/lib/statuts";
+import { formatDateFr, formatPoids } from "@/lib/utils";
+import { useColis } from "@/lib/queries";
+import type { Colis } from "@/lib/api";
+import { C } from "@/lib/tokens";
 
 // Icone de chaque statut (couleurs et libelle lus depuis statutConfig)
 const STATUT_ICONS: Record<string, typeof Clock> = {
-  cree:       Clock,
-  pris:       Package,
-  transit:    Truck,
-  arrive_hub: MapPin,
-  attente:    MapPin,
-  livraison:  Truck,
-  livre:      CheckCircle2,
-  retarde:    AlertTriangle,
-  incident:   AlertTriangle,
-  retourne:   RotateCcw,
-  perdu:      XCircle,
-  annule:     XCircle,
+  CREE:               Clock,
+  PRIS_EN_CHARGE:     Package,
+  EN_TRANSIT:         Truck,
+  ARRIVE_HUB:         MapPin,
+  EN_ATTENTE_RETRAIT: MapPin,
+  EN_LIVRAISON:       Truck,
+  LIVRE:              CheckCircle2,
+  RETOURNE:           RotateCcw,
+  PERDU:              XCircle,
+  INCIDENT:           AlertTriangle,
+  ANNULE:             XCircle,
 };
+
+// Nombre de colis demandes au serveur par page (plafonne a 100 cote backend)
+const PAR_PAGE = 10;
 
 // -- Badge de statut (etiquette coloree avec icone) --
 function StatusBadge({ statut }: { statut: string }) {
-  if (statut === "tous") return null;
   const config = statutConfig(statut);
   const Icon = STATUT_ICONS[statut];
   return (
@@ -68,17 +59,23 @@ function StatusBadge({ statut }: { statut: string }) {
   );
 }
 
-// -- Export CSV de la liste des colis --
-// BOM UTF-8 (\uFEFF) pour qu'Excel ouvre correctement les accents
-function exportCSV(data: ColisItem[]) {
+// -- Export CSV de la page courante --
+// BOM UTF-8 (﻿) pour qu'Excel ouvre correctement les accents
+function exportCSV(data: Colis[]) {
   const headers = ["Tracking", "Date", "Origine", "Destination", "Destinataire", "Telephone", "Poids", "Statut", "Montant XOF"];
   const rows = data.map((c) => [
-    c.tracking, formatDateFr(c.createdAt), c.origine, c.destination,
-    c.destinataire, c.telephone, c.poids,
-    statutConfig(c.statut).label, c.montant.toString(),
+    c.tracking,
+    formatDateFr(c.createdAt),
+    c.origine.ville,
+    c.destination.ville,
+    c.destinataireNom,
+    c.destinataireTel,
+    formatPoids(c.poidsGrammes),
+    statutConfig(c.statut).label,
+    c.montant.toString(),
   ]);
   const csv = [headers.join(";"), ...rows.map((r) => r.join(";"))].join("\n");
-  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
@@ -87,25 +84,29 @@ function exportCSV(data: ColisItem[]) {
   URL.revokeObjectURL(url);
 }
 
-// Nombre de colis affiches par page
-const PER_PAGE = 10;
+// -- Options du filtre : tous les statuts du backend --
+const FILTER_OPTIONS: FilterOption[] = [
+  { value: "", label: "Tous" },
+  ...Object.entries(STATUTS).map(([cle, config]) => ({
+    value: cle,
+    label: config.label,
+  })),
+];
 
 
 // ============================================================
 // Composant interne isole (pour useSearchParams + Suspense)
 // ============================================================
 function ColisPageInner() {
-  // Lit la liste depuis le store global
-  const { colis } = useAppStore();
-
   // -- Lecture du parametre "q" dans l'URL (?q=...) --
   // Utilise quand on vient de la barre de recherche de la topbar
   const searchParams = useSearchParams();
   const urlQuery = searchParams.get("q") || "";
 
   const [search, setSearch] = useState(urlQuery);
-  const [activeFilter, setActiveFilter] = useState("tous");
-  const [selectedColis, setSelectedColis] = useState<ColisItem | null>(null);
+  const [rechercheEnvoyee, setRechercheEnvoyee] = useState(urlQuery);
+  const [activeFilter, setActiveFilter] = useState("");
+  const [selectedColis, setSelectedColis] = useState<Colis | null>(null);
   const [page, setPage] = useState(1);
 
   // Synchro : si l'URL change, on met a jour la recherche
@@ -113,51 +114,26 @@ function ColisPageInner() {
     if (urlQuery) setSearch(urlQuery);
   }, [urlQuery]);
 
-  // -- Filtrage : par statut ET par texte de recherche --
-  const filtered = useMemo(() => {
-    return colis.filter((c) => {
-      if (activeFilter !== "tous" && c.statut !== activeFilter) return false;
-      if (search) {
-        const q = search.toLowerCase();
-        return (
-          c.tracking.toLowerCase().includes(q) ||
-          c.destinataire.toLowerCase().includes(q) ||
-          c.destination.toLowerCase().includes(q) ||
-          c.origine.toLowerCase().includes(q)
-        );
-      }
-      return true;
-    });
-  }, [search, activeFilter, colis]);
+  // La recherche part au serveur : on attend 400 ms de pause a la frappe
+  // pour ne pas declencher une requete par caractere.
+  useEffect(() => {
+    const t = setTimeout(() => setRechercheEnvoyee(search.trim()), 400);
+    return () => clearTimeout(t);
+  }, [search]);
 
   // Retour a la page 1 quand le filtre ou la recherche change
-  useEffect(() => { setPage(1); }, [search, activeFilter]);
+  useEffect(() => { setPage(1); }, [rechercheEnvoyee, activeFilter]);
 
-  // Pagination
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+  const { data, isPending, isError, error } = useColis({
+    statut: (activeFilter || undefined) as StatutColis | undefined,
+    recherche: rechercheEnvoyee || undefined,
+    page,
+    parPage: PAR_PAGE,
+  });
 
-  // Garde-fou : si la liste retrecit, on ne reste pas sur une page vide
-  const safePage = Math.min(page, totalPages);
-  const paginated = filtered.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE);
-
-  // Compteurs par statut (affiches dans les filtres)
-  const counts = useMemo(() => {
-    const map: Record<string, number> = { tous: colis.length };
-    colis.forEach((c) => {
-      map[c.statut] = (map[c.statut] || 0) + 1;
-    });
-    return map;
-  }, [colis]);
-
-  // -- Options du composant FilterTabs --
-  const filterOptions: FilterOption[] = [
-    { value: "tous", label: "Tous", count: counts.tous || 0 },
-    ...Object.entries(STATUTS).map(([key, config]) => ({
-      value: key,
-      label: config.label,
-      count: counts[key] || 0,
-    })),
-  ];
+  const elements = data?.elements ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = data?.pages ?? 1;
 
   return (
     <div
@@ -171,21 +147,24 @@ function ColisPageInner() {
             Mes colis
           </h1>
           <p style={{ fontSize: "13px", color: C.taupe, marginTop: "4px" }}>
-            {colis.length} colis au total
+            {total} colis au total
           </p>
         </div>
         <button
-          onClick={() => exportCSV(filtered)}
+          onClick={() => exportCSV(elements)}
+          disabled={elements.length === 0}
           className="flex items-center gap-2 rounded-lg self-start sm:self-auto"
           style={{
             padding: "9px 14px", fontSize: "13px", fontWeight: 500,
             backgroundColor: C.sage, border: `1px solid ${C.border}`,
-            color: C.taupe, cursor: "pointer",
+            color: C.taupe,
+            cursor: elements.length === 0 ? "not-allowed" : "pointer",
+            opacity: elements.length === 0 ? 0.6 : 1,
             minHeight: "40px",
           }}
         >
           <Download size={15} strokeWidth={2} />
-          Exporter CSV ({filtered.length})
+          Exporter cette page ({elements.length})
         </button>
       </div>
 
@@ -224,7 +203,7 @@ function ColisPageInner() {
 
       {/* -- FILTRES : dropdown natif sur mobile, pilules sur desktop -- */}
       <FilterTabs
-        options={filterOptions}
+        options={FILTER_OPTIONS}
         value={activeFilter}
         onChange={setActiveFilter}
         ariaLabel="Filtrer les colis par statut"
@@ -265,7 +244,25 @@ function ColisPageInner() {
               </tr>
             </thead>
             <tbody>
-              {paginated.length === 0 ? (
+              {isPending ? (
+                <tr>
+                  <td colSpan={8} style={{ padding: "48px 16px", textAlign: "center", fontSize: "13px", color: C.taupe }}>
+                    Chargement...
+                  </td>
+                </tr>
+              ) : isError ? (
+                <tr>
+                  <td colSpan={8} style={{ padding: "48px 16px", textAlign: "center" }}>
+                    <AlertTriangle size={32} style={{ color: C.terra, margin: "0 auto 12px" }} />
+                    <p style={{ fontFamily: "var(--font-heading)", fontSize: "15px", fontWeight: 600, color: C.anthracite }}>
+                      Impossible de charger les colis
+                    </p>
+                    <p style={{ fontSize: "12px", color: C.taupe, marginTop: "4px" }}>
+                      {error instanceof Error ? error.message : "Reessaie dans un instant."}
+                    </p>
+                  </td>
+                </tr>
+              ) : elements.length === 0 ? (
                 <tr>
                   <td colSpan={8} style={{ padding: "48px 16px", textAlign: "center" }}>
                     <Package size={32} style={{ color: C.border, margin: "0 auto 12px" }} />
@@ -277,9 +274,9 @@ function ColisPageInner() {
                     </p>
                   </td>
                 </tr>
-              ) : paginated.map((colis, idx) => (
+              ) : elements.map((colis, idx) => (
                 <tr
-                  key={colis.tracking}
+                  key={colis.id}
                   onClick={() => setSelectedColis(colis)}
                   className="transition-colors duration-150 cursor-pointer"
                   style={{
@@ -296,12 +293,12 @@ function ColisPageInner() {
                   </td>
                   <td style={{ padding: "12px 16px", fontSize: "12px", color: C.taupe }}>{formatDateFr(colis.createdAt)}</td>
                   <td style={{ padding: "12px 16px", fontSize: "13px", color: C.anthracite }}>
-                    <strong>{colis.origine}</strong>
-                    <span style={{ color: C.bronze, margin: "0 6px" }}>{"\u2192"}</span>
-                    <strong>{colis.destination}</strong>
+                    <strong>{colis.origine.ville}</strong>
+                    <span style={{ color: C.bronze, margin: "0 6px" }}>{"→"}</span>
+                    <strong>{colis.destination.ville}</strong>
                   </td>
-                  <td style={{ padding: "12px 16px", fontSize: "13px", color: C.taupe }}>{colis.destinataire}</td>
-                  <td style={{ padding: "12px 16px", fontSize: "12px", color: C.taupe }}>{colis.poids}</td>
+                  <td style={{ padding: "12px 16px", fontSize: "13px", color: C.taupe }}>{colis.destinataireNom}</td>
+                  <td style={{ padding: "12px 16px", fontSize: "12px", color: C.taupe }}>{formatPoids(colis.poidsGrammes)}</td>
                   <td style={{ padding: "12px 16px" }}>
                     <StatusBadge statut={colis.statut} />
                   </td>
@@ -318,48 +315,48 @@ function ColisPageInner() {
           </table>
         </div>
 
-        {/* -- Pagination -- */}
+        {/* -- Pagination (cote serveur) -- */}
         <div
           className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 py-3"
           style={{ borderTop: `1px solid ${C.border}` }}
         >
           <span style={{ fontSize: "12px", color: C.taupe }}>
-            {filtered.length === 0
+            {total === 0
               ? "0 colis"
-              : `${(safePage - 1) * PER_PAGE + 1}\u2013${Math.min(safePage * PER_PAGE, filtered.length)} sur ${filtered.length} colis`}
+              : `${(page - 1) * PAR_PAGE + 1}–${Math.min(page * PAR_PAGE, total)} sur ${total} colis`}
           </span>
           {totalPages > 1 && (
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={safePage === 1}
+                disabled={page === 1}
                 className="rounded-lg"
                 style={{
                   padding: "8px 14px", fontSize: "12px", fontWeight: 600,
                   fontFamily: "var(--font-heading)",
-                  backgroundColor: safePage === 1 ? C.sage : C.white,
+                  backgroundColor: page === 1 ? C.sage : C.white,
                   border: `1px solid ${C.border}`,
-                  color: safePage === 1 ? C.taupeLight : C.taupe,
-                  cursor: safePage === 1 ? "not-allowed" : "pointer",
+                  color: page === 1 ? C.taupeLight : C.taupe,
+                  cursor: page === 1 ? "not-allowed" : "pointer",
                   minHeight: "40px",
                 }}
               >
                 Precedent
               </button>
               <span style={{ fontSize: "12px", color: C.taupe, padding: "0 4px" }}>
-                {safePage} / {totalPages}
+                {page} / {totalPages}
               </span>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={safePage === totalPages}
+                disabled={page >= totalPages}
                 className="rounded-lg"
                 style={{
                   padding: "8px 14px", fontSize: "12px", fontWeight: 600,
                   fontFamily: "var(--font-heading)",
-                  backgroundColor: safePage === totalPages ? C.sage : C.emerald,
+                  backgroundColor: page >= totalPages ? C.sage : C.emerald,
                   border: "none",
-                  color: safePage === totalPages ? C.taupeLight : C.white,
-                  cursor: safePage === totalPages ? "not-allowed" : "pointer",
+                  color: page >= totalPages ? C.taupeLight : C.white,
+                  cursor: page >= totalPages ? "not-allowed" : "pointer",
                   minHeight: "40px",
                 }}
               >
@@ -384,7 +381,6 @@ function ColisPageInner() {
             style={{
               width: "min(440px, 100%)",
               maxWidth: "100%",
-              // Utilise dvh pour bien s'adapter aux barres iOS
               height: "100dvh",
               backgroundColor: C.white,
               borderLeft: `1px solid ${C.border}`,
@@ -440,27 +436,28 @@ function ColisPageInner() {
               {/* Informations principales */}
               <div className="rounded-xl" style={{ border: `1px solid ${C.border}`, overflow: "hidden" }}>
                 {[
-                  { label: "Trajet",       value: `${selectedColis.origine} \u2192 ${selectedColis.destination}` },
-                  { label: "Date",         value: formatDateFr(selectedColis.createdAt) },
-                  { label: "Service",      value: selectedColis.service },
-                  { label: "Poids",        value: selectedColis.poids },
-                  { label: "Contenu",      value: selectedColis.contenu },
-                  { label: "Montant",      value: `${selectedColis.montant.toLocaleString("fr")} XOF` },
-                ].map((row, i) => (
+                  { label: "Trajet",     value: `${selectedColis.origine.ville} → ${selectedColis.destination.ville}` },
+                  { label: "Relais",     value: `${selectedColis.origine.nom} → ${selectedColis.destination.nom}` },
+                  { label: "Date",       value: formatDateFr(selectedColis.createdAt) },
+                  { label: "Service",    value: LABELS_SERVICE[selectedColis.service] },
+                  { label: "Poids",      value: formatPoids(selectedColis.poidsGrammes) },
+                  { label: "Contenu",    value: selectedColis.description ?? "Non specifie" },
+                  { label: "Transport",  value: `${selectedColis.montantTransport.toLocaleString("fr")} XOF` },
+                  { label: "Supplement", value: `${selectedColis.montantSupplement.toLocaleString("fr")} XOF` },
+                  { label: "Total",      value: `${selectedColis.montant.toLocaleString("fr")} XOF` },
+                ].map((row, i, tab) => (
                   <div
                     key={row.label}
                     className="flex justify-between px-4 py-3 gap-3"
                     style={{
-                      borderBottom: i < 5 ? `1px solid ${C.border}` : "none",
+                      borderBottom: i < tab.length - 1 ? `1px solid ${C.border}` : "none",
                       backgroundColor: i % 2 === 0 ? "transparent" : C.ivory,
                     }}
                   >
                     <span style={{ fontSize: "12px", color: C.taupe, flexShrink: 0 }}>{row.label}</span>
                     <span style={{
                       fontSize: "12px", fontWeight: 500, color: C.anthracite,
-                      textAlign: "right",
-                      overflowWrap: "break-word",
-                      minWidth: 0,
+                      textAlign: "right", overflowWrap: "break-word", minWidth: 0,
                     }}>
                       {row.value}
                     </span>
@@ -482,17 +479,22 @@ function ColisPageInner() {
                       fontFamily: "var(--font-heading)", fontSize: "14px", fontWeight: 700,
                     }}
                   >
-                    {selectedColis.destinataire.split(" ").map(n => n[0]).join("").slice(0, 2)}
+                    {selectedColis.destinataireNom.split(" ").map(n => n[0]).join("").slice(0, 2)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div style={{ fontSize: "14px", fontWeight: 500, color: C.anthracite, overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {selectedColis.destinataire}
+                      {selectedColis.destinataireNom}
                     </div>
-                    <div style={{ fontSize: "12px", color: C.taupe }}>{selectedColis.telephone}</div>
+                    <div style={{ fontSize: "12px", color: C.taupe }}>{selectedColis.destinataireTel}</div>
+                    {selectedColis.destinataireAdresse && (
+                      <div style={{ fontSize: "11px", color: C.taupeLight, marginTop: "2px" }}>
+                        {selectedColis.destinataireAdresse}
+                      </div>
+                    )}
                   </div>
                   <a
-                    href={`tel:${selectedColis.telephone}`}
-                    aria-label={`Appeler ${selectedColis.destinataire}`}
+                    href={`tel:${selectedColis.destinataireTel}`}
+                    aria-label={`Appeler ${selectedColis.destinataireNom}`}
                     className="flex items-center justify-center rounded-lg"
                     style={{
                       width: "40px", height: "40px",

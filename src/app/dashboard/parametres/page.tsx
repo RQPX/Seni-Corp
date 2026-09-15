@@ -1,21 +1,21 @@
 // ============================================================
 // SENI CORP — Page "Parametres"
-// Parametres du compte : profil, entreprise, notifications, securite.
+// Profil, entreprise, securite. Tout vient de l'API et y retourne.
+//
+// PATCH /clients/profil n'accepte ni soldeCompte, ni typeClient, ni
+// role : c'est ce qui empeche un client de s'auto-crediter. Ne pas
+// tenter de les envoyer.
 // ============================================================
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { User, Building2, Bell, Shield, Save, Check, AlertCircle } from "lucide-react";
-
-const C = {
-  emerald: "#0B4D3F", emeraldSoft: "#E8F0ED",
-  bronze: "#B8935A", bronzeLight: "#D4B486", bronzeSoft: "#F5EFE3",
-  ivory: "#FAF6F0", sage: "#E8EDE5", anthracite: "#1A1A1A",
-  taupe: "#6B6259", taupeLight: "#9B8A7E", border: "#EAE3D5",
-  terra: "#C66D4F", terraSoft: "#FCEEE9",
-  white: "#FFFFFF",
-};
+import { ApiError, changerMotDePasse, majProfil, type MajProfilData } from "@/lib/api";
+import { validerMotDePasse } from "@/lib/motDePasse";
+import { cles, useProfil, useUtilisateur } from "@/lib/queries";
+import { C } from "@/lib/tokens";
 
 // -- Style commun des champs de formulaire --
 // fontSize 16px = evite le zoom automatique sur iOS au focus
@@ -28,6 +28,18 @@ const inputStyle: React.CSSProperties = {
   minHeight: "48px",
 };
 
+const inputLectureSeule: React.CSSProperties = {
+  ...inputStyle,
+  backgroundColor: C.sage,
+  color: C.taupe,
+  cursor: "not-allowed",
+};
+
+const labelStyle: React.CSSProperties = {
+  fontSize: "10px", fontWeight: 600, textTransform: "uppercase",
+  letterSpacing: "0.5px", color: C.taupe,
+};
+
 const TABS = [
   { id: "profil",        label: "Profil",        icon: User },
   { id: "entreprise",    label: "Entreprise",    icon: Building2 },
@@ -35,109 +47,115 @@ const TABS = [
   { id: "securite",      label: "Securite",      icon: Shield },
 ];
 
-// Bouton "Enregistrer" avec retour visuel de succes
-function SaveButton({ onSave, label = "Enregistrer" }: { onSave: () => boolean; label?: string }) {
-  const [saved, setSaved] = useState(false);
-
-  const handleClick = () => {
-    const ok = onSave();
-    if (ok) {
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
-    }
-  };
-
+function Erreur({ messages }: { messages: string[] }) {
+  if (messages.length === 0) return null;
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      className="flex items-center gap-2 rounded-lg transition-colors"
-      style={{
-        padding: "10px 20px",
-        backgroundColor: saved ? C.emeraldSoft : C.emerald,
-        color: saved ? C.emerald : C.white,
-        border: saved ? `1px solid ${C.emerald}` : "none",
-        fontFamily: "var(--font-heading)", fontSize: "13px", fontWeight: 600, cursor: "pointer",
-      }}
-    >
-      {saved ? <Check size={15} /> : <Save size={15} />}
-      {saved ? "Enregistre !" : label}
-    </button>
-  );
-}
-
-// Toggle de notifications
-function Toggle({ label, description, defaultOn = false }: {
-  label: string; description: string; defaultOn?: boolean;
-}) {
-  const [on, setOn] = useState(defaultOn);
-  return (
-    <div className="flex items-start gap-4 py-4" style={{ borderBottom: `1px solid ${C.border}` }}>
-      <div className="flex-1">
-        <div style={{ fontSize: "14px", fontWeight: 500, color: C.anthracite }}>{label}</div>
-        <div style={{ fontSize: "12px", color: C.taupe, marginTop: "2px" }}>{description}</div>
+    <div className="flex items-start gap-2 rounded-lg" style={{ padding: "10px 12px", backgroundColor: C.terraSoft, border: `1px solid ${C.terra}` }} role="alert">
+      <AlertCircle size={15} style={{ color: C.terra, flexShrink: 0, marginTop: "1px" }} />
+      <div>
+        {messages.map((m, i) => (
+          <p key={i} style={{ fontSize: "12px", color: C.terra, fontWeight: 500, lineHeight: 1.5 }}>{m}</p>
+        ))}
       </div>
-      <button
-        onClick={() => setOn(!on)}
-        role="switch"
-        aria-checked={on}
-        className="shrink-0 rounded-full transition-colors"
-        style={{
-          width: "44px", height: "24px",
-          backgroundColor: on ? C.emerald : C.border,
-          position: "relative", border: "none", cursor: "pointer",
-        }}
-      >
-        <span className="block rounded-full transition-transform" style={{
-          width: "18px", height: "18px",
-          backgroundColor: C.white, position: "absolute",
-          top: "3px", left: on ? "23px" : "3px",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
-        }} />
-      </button>
     </div>
   );
 }
 
+function SaveButton({ onClick, enCours, succes, label = "Enregistrer" }: {
+  onClick: () => void; enCours: boolean; succes: boolean; label?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={enCours}
+      className="flex items-center gap-2 rounded-lg transition-colors"
+      style={{
+        padding: "10px 20px",
+        backgroundColor: succes ? C.emeraldSoft : C.emerald,
+        color: succes ? C.emerald : C.white,
+        border: succes ? `1px solid ${C.emerald}` : "none",
+        fontFamily: "var(--font-heading)", fontSize: "13px", fontWeight: 600,
+        cursor: enCours ? "wait" : "pointer",
+        opacity: enCours ? 0.7 : 1,
+        minHeight: "44px",
+      }}
+    >
+      {succes ? <Check size={15} /> : <Save size={15} />}
+      {enCours ? "Enregistrement..." : succes ? "Enregistre !" : label}
+    </button>
+  );
+}
+
 export default function ParametresPage() {
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("profil");
 
+  const { data: user } = useUtilisateur();
+  const { data: profil } = useProfil();
+
   // --- Onglet Profil ---
-  const [nom, setNom] = useState("Seni N'Diaye");
-  const [tel, setTel] = useState("+225 07 12 34 56 78");
-  const [email, setEmail] = useState("SeniNdiaye@modeadjame.com");
-  const [langue, setLangue] = useState("fr");
+  const [nom, setNom] = useState("");
+  const [prenom, setPrenom] = useState("");
+  const [telephone, setTelephone] = useState("");
+  const [ville, setVille] = useState("");
 
   // --- Onglet Entreprise ---
-  const [nomCommercial, setNomCommercial] = useState("Mode Adjame");
-  const [rccm, setRccm] = useState("CI-ABJ-2024-B-12345");
-  const [adresse, setAdresse] = useState("Marche Adjame, Stand 245, Abidjan");
+  const [nomBoutique, setNomBoutique] = useState("");
+
+  // Remplit les champs des que le profil arrive
+  useEffect(() => {
+    if (!profil) return;
+    setNom(profil.user.nom);
+    setPrenom(profil.user.prenom);
+    setTelephone(profil.user.telephone);
+    setVille(profil.ville ?? "");
+    setNomBoutique(profil.nomBoutique ?? "");
+  }, [profil]);
+
+  const majProfilMutation = useMutation({
+    mutationFn: (data: MajProfilData) => majProfil(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: cles.profil });
+      queryClient.invalidateQueries({ queryKey: cles.moi });
+    },
+  });
 
   // --- Onglet Securite ---
   const [pwdActuel, setPwdActuel] = useState("");
   const [pwdNouveau, setPwdNouveau] = useState("");
   const [pwdConfirm, setPwdConfirm] = useState("");
-  const [pwdError, setPwdError] = useState("");
+  const [pwdErreurs, setPwdErreurs] = useState<string[]>([]);
 
-  const saveProfil = () => {
-    // En production : appel API PATCH /commercants/profil
-    return true;
-  };
-
-  const saveEntreprise = () => {
-    // En production : appel API PATCH /commercants/entreprise
-    return true;
-  };
+  const motDePasseMutation = useMutation({
+    mutationFn: () => changerMotDePasse(pwdActuel, pwdNouveau),
+    onSuccess: () => {
+      setPwdActuel(""); setPwdNouveau(""); setPwdConfirm("");
+      setPwdErreurs([]);
+    },
+    onError: (err) => {
+      setPwdErreurs(err instanceof ApiError ? err.messages : ["Impossible de modifier le mot de passe."]);
+    },
+  });
 
   const savePassword = () => {
-    setPwdError("");
-    if (!pwdActuel) { setPwdError("Entrez votre mot de passe actuel."); return false; }
-    if (pwdNouveau.length < 8) { setPwdError("Le nouveau mot de passe doit contenir au moins 8 caracteres."); return false; }
-    if (pwdNouveau !== pwdConfirm) { setPwdError("Les deux mots de passe ne correspondent pas."); return false; }
-    // En production : appel API PATCH /auth/password
-    setPwdActuel(""); setPwdNouveau(""); setPwdConfirm("");
-    return true;
+    const erreurs = validerMotDePasse(pwdNouveau, {
+      nom: profil?.user.nom,
+      prenom: profil?.user.prenom,
+      email: profil?.user.email,
+    });
+    if (!pwdActuel) erreurs.unshift("Entrez votre mot de passe actuel.");
+    if (pwdNouveau !== pwdConfirm) erreurs.push("Les deux mots de passe ne correspondent pas.");
+    if (erreurs.length > 0) { setPwdErreurs(erreurs); return; }
+    setPwdErreurs([]);
+    motDePasseMutation.mutate();
   };
+
+  const erreursProfil = majProfilMutation.error instanceof ApiError
+    ? majProfilMutation.error.messages
+    : [];
+
+  const estEntreprise = profil?.typeClient === "ENTREPRISE";
 
   return (
     <div className="px-4 py-5 md:px-8 md:py-7 max-w-[1000px] mx-auto">
@@ -177,74 +195,100 @@ export default function ParametresPage() {
         {activeTab === "profil" && (
           <div className="space-y-5">
             <div className="flex items-center gap-4 pb-5" style={{ borderBottom: `1px solid ${C.border}` }}>
-              <div className="flex items-center justify-center rounded-full" style={{
+              <div className="flex items-center justify-center rounded-full shrink-0" style={{
                 width: "56px", height: "56px",
                 background: `linear-gradient(135deg, ${C.bronze}, ${C.bronzeLight})`,
                 fontFamily: "var(--font-heading)", fontSize: "18px", fontWeight: 700, color: C.white,
               }}>
-                SN
+                {`${prenom[0] ?? ""}${nom[0] ?? ""}`.toUpperCase() || "--"}
               </div>
-              <div>
-                <div style={{ fontSize: "16px", fontWeight: 600, color: C.anthracite }}>{nom}</div>
-                <div style={{ fontSize: "12px", color: C.taupe }}>{email}</div>
+              <div className="min-w-0">
+                <div style={{ fontSize: "16px", fontWeight: 600, color: C.anthracite }}>
+                  {prenom} {nom}
+                </div>
+                <div style={{ fontSize: "12px", color: C.taupe }}>{profil?.user.email ?? user?.email ?? ""}</div>
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
-                <label style={{ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", color: C.taupe }}>Nom complet</label>
+                <label style={labelStyle}>Prenom</label>
+                <input type="text" value={prenom} onChange={(e) => setPrenom(e.target.value)} style={inputStyle} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label style={labelStyle}>Nom</label>
                 <input type="text" value={nom} onChange={(e) => setNom(e.target.value)} style={inputStyle} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label style={{ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", color: C.taupe }}>Telephone</label>
-                <input type="tel" value={tel} onChange={(e) => setTel(e.target.value)} style={inputStyle} />
+                <label style={labelStyle}>Telephone</label>
+                <input type="tel" value={telephone} onChange={(e) => setTelephone(e.target.value)} style={inputStyle} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label style={{ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", color: C.taupe }}>Email</label>
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} style={inputStyle} />
+                <label style={labelStyle}>Ville</label>
+                <input type="text" value={ville} onChange={(e) => setVille(e.target.value)} style={inputStyle} />
               </div>
-              <div className="flex flex-col gap-1.5">
-                <label style={{ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", color: C.taupe }}>Langue</label>
-                <select value={langue} onChange={(e) => setLangue(e.target.value)} style={inputStyle}>
-                  <option value="fr">Francais</option>
-                  <option value="en">English</option>
-                </select>
+              <div className="flex flex-col gap-1.5 sm:col-span-2">
+                <label style={labelStyle}>Email</label>
+                <input type="email" value={profil?.user.email ?? ""} readOnly style={inputLectureSeule} />
+                <span style={{ fontSize: "11px", color: C.taupeLight }}>
+                  L&apos;email sert d&apos;identifiant de connexion : contacte le support pour le changer.
+                </span>
               </div>
             </div>
 
-            <SaveButton onSave={saveProfil} />
+            <Erreur messages={erreursProfil} />
+
+            <SaveButton
+              onClick={() => majProfilMutation.mutate({ nom, prenom, telephone, ville })}
+              enCours={majProfilMutation.isPending}
+              succes={majProfilMutation.isSuccess}
+            />
           </div>
         )}
 
         {/* ENTREPRISE */}
         {activeTab === "entreprise" && (
           <div className="space-y-5">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label style={{ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", color: C.taupe }}>Nom commercial</label>
-                <input type="text" value={nomCommercial} onChange={(e) => setNomCommercial(e.target.value)} style={inputStyle} />
+            {estEntreprise ? (
+              <>
+                <div className="flex flex-col gap-1.5">
+                  <label style={labelStyle}>Nom commercial</label>
+                  <input type="text" value={nomBoutique} onChange={(e) => setNomBoutique(e.target.value)} style={inputStyle} />
+                </div>
+
+                <Erreur messages={erreursProfil} />
+
+                <SaveButton
+                  onClick={() => majProfilMutation.mutate({ nomBoutique })}
+                  enCours={majProfilMutation.isPending}
+                  succes={majProfilMutation.isSuccess}
+                />
+              </>
+            ) : (
+              <div className="text-center py-8">
+                <Building2 size={30} style={{ color: C.border, margin: "0 auto 10px" }} />
+                <p style={{ fontFamily: "var(--font-heading)", fontSize: "14px", fontWeight: 600, color: C.taupe }}>
+                  Compte particulier
+                </p>
+                <p style={{ fontSize: "12px", color: C.taupeLight, marginTop: "4px" }}>
+                  Les informations d&apos;entreprise ne concernent que les comptes professionnels.
+                </p>
               </div>
-              <div className="flex flex-col gap-1.5">
-                <label style={{ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", color: C.taupe }}>Numero RCCM</label>
-                <input type="text" value={rccm} onChange={(e) => setRccm(e.target.value)} style={inputStyle} />
-              </div>
-              <div className="flex flex-col gap-1.5 sm:col-span-2">
-                <label style={{ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", color: C.taupe }}>Adresse</label>
-                <input type="text" value={adresse} onChange={(e) => setAdresse(e.target.value)} style={inputStyle} />
-              </div>
-            </div>
-            <SaveButton onSave={saveEntreprise} />
+            )}
           </div>
         )}
 
-        {/* NOTIFICATIONS */}
+        {/* NOTIFICATIONS — aucun endpoint backend a ce jour */}
         {activeTab === "notifications" && (
-          <div>
-            <Toggle label="SMS de confirmation" description="Recevoir un SMS a chaque creation de colis." defaultOn />
-            <Toggle label="SMS de livraison" description="Recevoir un SMS quand un colis est livre." defaultOn />
-            <Toggle label="Alertes solde bas" description="Notification quand le solde descend sous 10 000 XOF." defaultOn />
-            <Toggle label="Rapport hebdomadaire" description="Recevoir un resume par email chaque lundi." defaultOn={false} />
-            <Toggle label="Notifications push" description="Notifications dans le navigateur (desktop)." defaultOn={false} />
+          <div className="text-center py-10">
+            <Bell size={30} style={{ color: C.border, margin: "0 auto 12px" }} />
+            <p style={{ fontFamily: "var(--font-heading)", fontSize: "15px", fontWeight: 600, color: C.anthracite }}>
+              Bientot disponible
+            </p>
+            <p style={{ fontSize: "12.5px", color: C.taupe, marginTop: "6px", lineHeight: 1.6, maxWidth: "440px", margin: "6px auto 0" }}>
+              Le reglage des alertes SMS et email sera active des que le service de
+              notifications sera en place cote serveur.
+            </p>
           </div>
         )}
 
@@ -252,29 +296,61 @@ export default function ParametresPage() {
         {activeTab === "securite" && (
           <div className="space-y-5">
             <div className="flex flex-col gap-1.5">
-              <label style={{ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", color: C.taupe }}>Mot de passe actuel</label>
-              <input type="password" placeholder="Entrez votre mot de passe actuel" value={pwdActuel} onChange={(e) => { setPwdActuel(e.target.value); setPwdError(""); }} style={inputStyle} />
+              <label style={labelStyle}>Mot de passe actuel</label>
+              <input
+                type="password" autoComplete="current-password"
+                placeholder="Entrez votre mot de passe actuel"
+                value={pwdActuel}
+                onChange={(e) => { setPwdActuel(e.target.value); setPwdErreurs([]); }}
+                style={inputStyle}
+              />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
-                <label style={{ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", color: C.taupe }}>Nouveau mot de passe</label>
-                <input type="password" placeholder="8 caracteres minimum" value={pwdNouveau} onChange={(e) => { setPwdNouveau(e.target.value); setPwdError(""); }} style={inputStyle} />
+                <label style={labelStyle}>Nouveau mot de passe</label>
+                <input
+                  type="password" autoComplete="new-password"
+                  placeholder="12 caracteres minimum"
+                  value={pwdNouveau}
+                  onChange={(e) => { setPwdNouveau(e.target.value); setPwdErreurs([]); }}
+                  style={inputStyle}
+                />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label style={{ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", color: C.taupe }}>Confirmer</label>
-                <input type="password" placeholder="Repetez le mot de passe" value={pwdConfirm} onChange={(e) => { setPwdConfirm(e.target.value); setPwdError(""); }} style={inputStyle} />
+                <label style={labelStyle}>Confirmer</label>
+                <input
+                  type="password" autoComplete="new-password"
+                  placeholder="Repetez le mot de passe"
+                  value={pwdConfirm}
+                  onChange={(e) => { setPwdConfirm(e.target.value); setPwdErreurs([]); }}
+                  style={inputStyle}
+                />
               </div>
             </div>
 
-            {/* Message d'erreur validation */}
-            {pwdError && (
-              <div className="flex items-center gap-2 rounded-lg" style={{ padding: "10px 12px", backgroundColor: C.terraSoft, border: `1px solid ${C.terra}` }}>
-                <AlertCircle size={15} style={{ color: C.terra, flexShrink: 0 }} />
-                <span style={{ fontSize: "12px", color: C.terra, fontWeight: 500 }}>{pwdError}</span>
+            <p style={{ fontSize: "11.5px", color: C.taupeLight, lineHeight: 1.6 }}>
+              12 caracteres minimum, avec au moins 3 types de caracteres (minuscule,
+              majuscule, chiffre, symbole) — ou 16 caracteres et plus. Changer le mot
+              de passe deconnecte toutes tes autres sessions.
+            </p>
+
+            <Erreur messages={pwdErreurs} />
+
+            {motDePasseMutation.isSuccess && (
+              <div className="flex items-center gap-2 rounded-lg" style={{ padding: "10px 12px", backgroundColor: C.emeraldSoft, border: `1px solid ${C.emerald}` }} role="status">
+                <Check size={15} style={{ color: C.emerald, flexShrink: 0 }} />
+                <span style={{ fontSize: "12px", color: C.emerald, fontWeight: 500 }}>
+                  Mot de passe modifie. Tes autres sessions ont ete deconnectees.
+                </span>
               </div>
             )}
 
-            <SaveButton onSave={savePassword} label="Modifier le mot de passe" />
+            <SaveButton
+              onClick={savePassword}
+              enCours={motDePasseMutation.isPending}
+              succes={motDePasseMutation.isSuccess}
+              label="Modifier le mot de passe"
+            />
           </div>
         )}
       </div>

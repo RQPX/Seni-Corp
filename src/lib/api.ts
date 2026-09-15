@@ -1,164 +1,264 @@
 // ================================================================
 // SENI CORP — Client API
-// Ce fichier contient toutes les fonctions qui parlent au backend.
-// Il gere aussi la connexion et la deconnexion de facon securisee.
+// Toutes les fonctions qui parlent au backend passent par ici.
 //
-// IMPORTANT SECURITE :
-// - Le jeton d'authentification (JWT) est stocke dans un cookie
-//   "HttpOnly" et "Secure" cote backend. Le frontend NE VOIT PAS
-//   le jeton (impossible de le voler via une faille XSS).
-// - Chaque requete est envoyee avec `credentials: "include"` pour
-//   que le navigateur envoie automatiquement le cookie.
+// SECURITE — trois invariants a ne jamais casser :
+//  1. Aucun jeton n'est stocke cote client. L'authentification tient
+//     entierement dans des cookies httpOnly poses par le backend.
+//  2. Toute ecriture (POST/PATCH/PUT/DELETE) porte l'en-tete
+//     X-CSRF-Token, recopie depuis le cookie seni_csrf (lisible par JS
+//     volontairement : un site tiers peut declencher une requete mais ne
+//     peut pas lire notre cookie, donc pas remplir l'en-tete).
+//  3. Aucun montant ni numero de suivi n'est calcule ici. Ils viennent
+//     du serveur, on ne fait que les afficher.
 // ================================================================
 
-// -- URL du backend --
-// Priorite : variable d'environnement > valeur par defaut
-// En dev local : http://localhost:3001/api/v1 (backend NestJS)
-// En prod      : https://api.seni-corp.ci/v1 (a configurer via env)
-// Ne JAMAIS committer une URL de prod en dur ici
-function getApiBase(): string {
-  const envUrl = process.env.NEXT_PUBLIC_API_URL;
+import type {
+  ModePaiement,
+  Role,
+  StatutColis,
+  StatutTransaction,
+  TypeClient,
+  TypeService,
+  TypeTransaction,
+} from "@/lib/statuts";
 
-  // En production, si l'URL n'est pas definie, c'est une erreur de config
-  // On log l'alerte et on echoue clairement plutot que d'utiliser localhost
-  if (!envUrl && process.env.NODE_ENV === "production") {
-    // eslint-disable-next-line no-console
-    console.error(
-      "[SENI CORP] NEXT_PUBLIC_API_URL manquante en production. " +
-      "L'application ne peut pas contacter le backend."
-    );
-    return ""; // les appels API echoueront visiblement au lieu d'aller sur localhost
-  }
+// -- Base de l'API --
+// L'API est proxifiee par Next (voir rewrites() dans next.config.ts),
+// donc un chemin relatif est la valeur normale, y compris en production.
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "/api/v1";
 
-  return envUrl ?? "http://localhost:3001/api/v1";
-}
 
-const API_BASE = getApiBase();
+// ================================================================
+// ERREURS
+// ================================================================
 
-// -- Type d'erreur normalise --
-// Toutes les erreurs API passent par ce type pour une gestion coherente
+export type CodeErreur =
+  | "VALIDATION"
+  | "DOUBLON"
+  | "INTROUVABLE"
+  | "CONTRAINTE_METIER"
+  | "ERREUR_INTERNE"
+  | "RESEAU"
+  | "NON_AUTHENTIFIE";
+
 export class ApiError extends Error {
   status: number;
   code?: string;
+  /** Le backend renvoie `message` en chaine ou en tableau : ici toujours un tableau. */
+  messages: string[];
 
-  constructor(message: string, status: number, code?: string) {
-    super(message);
+  constructor(messages: string[], status: number, code?: string) {
+    super(messages.join(" ") || `Erreur ${status}`);
     this.name = "ApiError";
     this.status = status;
     this.code = code;
+    this.messages = messages;
   }
 }
 
 
-// -- Fonction generique pour tous les appels API --
-// Elle ajoute automatiquement les bons en-tetes et envoie le cookie
+// ================================================================
+// CSRF
+// ================================================================
+
+export function lireJetonCsrf(): string | null {
+  if (typeof document === "undefined") return null;
+  const trouve = document.cookie
+    .split("; ")
+    .find((c) => c.startsWith("seni_csrf="));
+  return trouve ? decodeURIComponent(trouve.split("=")[1]) : null;
+}
+
+
+// ================================================================
+// RAFRAICHISSEMENT DE SESSION
+// ================================================================
+
+// Le jeton d'acces expire au bout de 15 minutes. Quand plusieurs requetes
+// partent en parallele et prennent toutes un 401, elles doivent partager UN
+// SEUL appel a /auth/refresh : le backend fait tourner les jetons de
+// rafraichissement et interprete un second usage du meme jeton comme un vol,
+// ce qui revoque toute la session. Cette promesse mutualisee est donc une
+// protection, pas une optimisation.
+let refreshEnCours: Promise<boolean> | null = null;
+
+function rafraichirSession(): Promise<boolean> {
+  if (!refreshEnCours) {
+    const headers: Record<string, string> = { Accept: "application/json" };
+    const csrf = lireJetonCsrf();
+    if (csrf) headers["X-CSRF-Token"] = csrf;
+
+    refreshEnCours = fetch(`${API_BASE}/auth/refresh`, {
+      method: "POST",
+      headers,
+      credentials: "include",
+    })
+      .then((res) => res.ok)
+      .catch(() => false)
+      .finally(() => {
+        refreshEnCours = null;
+      });
+  }
+  return refreshEnCours;
+}
+
+function redirigerVersLogin() {
+  if (typeof window === "undefined") return;
+  if (window.location.pathname.startsWith("/login")) return;
+  window.location.href = "/login?session=expired";
+}
+
+// Routes ou un 401 est une reponse metier normale, pas une session expiree :
+// tenter un rafraichissement dessus ne ferait que boucler.
+const ROUTES_SANS_REFRESH = ["/auth/login", "/auth/register", "/auth/refresh", "/auth/logout"];
+
+
+// ================================================================
+// APPEL GENERIQUE
+// ================================================================
+
 async function apiFetch<T>(
   path: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  dejaRafraichi = false
 ): Promise<T> {
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-    "Accept": "application/json",
-    ...options.headers,
+  const methode = (options.method ?? "GET").toUpperCase();
+  const estEcriture = methode !== "GET" && methode !== "HEAD";
+
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    ...(options.body ? { "Content-Type": "application/json" } : {}),
+    ...(options.headers as Record<string, string> | undefined),
   };
 
-  let res: Response;
+  if (estEcriture) {
+    const csrf = lireJetonCsrf();
+    if (csrf) headers["X-CSRF-Token"] = csrf;
+  }
 
+  let res: Response;
   try {
     res = await fetch(`${API_BASE}${path}`, {
       ...options,
       headers,
-      // -- CLE DE LA SECURITE --
-      // Envoie le cookie httpOnly automatiquement a chaque requete
-      // Le frontend n'a JAMAIS besoin de manipuler le jeton lui-meme
       credentials: "include",
     });
-  } catch (err) {
-    // Reseau coupe, DNS foire, etc.
+  } catch {
     throw new ApiError(
-      "Impossible de contacter le serveur. Verifie ta connexion internet.",
+      ["Impossible de contacter le serveur. Verifie ta connexion internet."],
       0,
-      "NETWORK_ERROR"
+      "RESEAU"
     );
   }
 
-  // -- 401 Unauthorized : le cookie a expire ou est absent --
-  // On redirige vers la page de connexion
-  if (res.status === 401) {
-    // Uniquement si on est cote navigateur (pas cote serveur pendant SSR)
-    if (typeof window !== "undefined") {
-      // On evite les boucles infinies si on est deja sur /login
-      if (!window.location.pathname.startsWith("/login")) {
-        window.location.href = "/login?session=expired";
-      }
-    }
-    throw new ApiError("Session expiree. Reconnectez-vous.", 401, "UNAUTHORIZED");
+  // -- 401 : jeton d'acces expire, on tente un rafraichissement unique --
+  if (res.status === 401 && !dejaRafraichi && !ROUTES_SANS_REFRESH.includes(path)) {
+    const rafraichi = await rafraichirSession();
+    if (rafraichi) return apiFetch<T>(path, options, true);
+
+    redirigerVersLogin();
+    throw new ApiError(["Session expiree. Reconnectez-vous."], 401, "NON_AUTHENTIFIE");
   }
 
-  // -- Autres erreurs (400, 403, 404, 500...) --
   if (!res.ok) {
-    let errBody: { message?: string; code?: string } = {};
+    let corps: { message?: string | string[]; code?: string } = {};
     try {
-      errBody = await res.json();
+      corps = await res.json();
     } catch {
-      // Reponse non-JSON, on ignore
+      // Reponse non-JSON (502 d'un proxy, page d'erreur HTML...)
     }
-    throw new ApiError(
-      errBody.message ?? `Erreur ${res.status}`,
-      res.status,
-      errBody.code
-    );
+    const messages = Array.isArray(corps.message)
+      ? corps.message
+      : corps.message
+        ? [corps.message]
+        : [`Erreur ${res.status}`];
+    throw new ApiError(messages, res.status, corps.code);
   }
 
-  // -- 204 No Content : reponse vide legale --
   if (res.status === 204) return undefined as T;
-
   return res.json();
+}
+
+// Construit une query string en ignorant les valeurs vides
+function query(params: Record<string, string | number | undefined | null>): string {
+  const qs = new URLSearchParams();
+  for (const [cle, valeur] of Object.entries(params)) {
+    if (valeur === undefined || valeur === null || valeur === "") continue;
+    qs.set(cle, String(valeur));
+  }
+  const s = qs.toString();
+  return s ? `?${s}` : "";
 }
 
 
 // ================================================================
-// AUTHENTIFICATION
-// Le backend gere le cookie httpOnly. Le frontend appelle juste
-// les endpoints et laisse le navigateur gerer le cookie.
+// TYPES PARTAGES
 // ================================================================
+
+export interface Paginated<T> {
+  elements: T[];
+  total: number;
+  page: number;
+  parPage: number;
+  pages: number;
+}
 
 export interface UserInfo {
   id: number;
   email: string;
   nom: string;
   prenom: string;
-  role: string;
+  telephone: string;
+  role: Role;
+  clientId: number | null;
 }
 
-export interface LoginResponse {
+export interface AuthResponse {
   user: UserInfo;
-  // Le backend renvoie le user, mais PAS le jeton
-  // (le jeton est dans le cookie httpOnly, invisible pour nous)
+  csrfToken: string;
 }
 
-// -- Connexion --
-// Le backend valide les identifiants, cree une session,
-// et pose le cookie httpOnly avec le JWT
-export async function login(email: string, motDePasse: string): Promise<LoginResponse> {
-  return apiFetch<LoginResponse>("/auth/login", {
+
+// ================================================================
+// AUTHENTIFICATION
+// ================================================================
+
+export interface RegisterData {
+  email: string;
+  motDePasse: string;
+  nom: string;
+  prenom: string;
+  telephone: string;
+  typeClient: TypeClient;
+  /** Obligatoire si typeClient vaut ENTREPRISE, interdit sinon. */
+  nomBoutique?: string;
+  ville?: string;
+}
+
+export function register(data: RegisterData): Promise<AuthResponse> {
+  return apiFetch("/auth/register", { method: "POST", body: JSON.stringify(data) });
+}
+
+export function login(email: string, motDePasse: string): Promise<AuthResponse> {
+  return apiFetch("/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, motDePasse }),
   });
 }
 
-// -- Deconnexion --
-// Le backend supprime la session et efface le cookie
 export async function logout(): Promise<void> {
   try {
     await apiFetch<void>("/auth/logout", { method: "POST" });
   } catch {
-    // On ignore les erreurs : dans tous les cas on veut deconnecter cote client
+    // On deconnecte cote client dans tous les cas
   }
 }
 
-// -- Recupere l'utilisateur actuellement connecte --
-// Utile pour verifier qu'on est bien authentifie au chargement de l'app
+export function logoutAll(): Promise<{ success: boolean; sessionsRevoquees: number }> {
+  return apiFetch("/auth/logout-all", { method: "POST" });
+}
+
 export async function getCurrentUser(): Promise<UserInfo | null> {
   try {
     return await apiFetch<UserInfo>("/auth/me");
@@ -168,26 +268,53 @@ export async function getCurrentUser(): Promise<UserInfo | null> {
   }
 }
 
+export function getCsrfToken(): Promise<{ csrfToken: string }> {
+  return apiFetch("/auth/csrf");
+}
+
 
 // ================================================================
 // COLIS
 // ================================================================
 
+export interface PointRelaisResume {
+  id: number;
+  nom: string;
+  ville: string;
+}
+
 export interface Colis {
   id: number;
   tracking: string;
-  origineId: number;
-  destinationId: number;
   destinataireNom: string;
   destinataireTel: string;
-  destinataireAdresse?: string;
-  poids: number;
+  destinataireAdresse: string | null;
+  /** En GRAMMES en sortie, alors que l'API accepte des KG en entree. */
+  poidsGrammes: number;
+  description: string | null;
+  service: TypeService;
+  /** Entier XOF. Aucun montant n'est calcule cote client. */
   montant: number;
-  statut: string;
-  modePaiement: string;
+  montantTransport: number;
+  montantSupplement: number;
+  statut: StatutColis;
+  modePaiement: ModePaiement;
+  paiementConfirme: boolean;
   createdAt: string;
-  origine?: { nom: string; ville: string };
-  destination?: { nom: string; ville: string };
+  updatedAt: string;
+  clientId: number;
+  origine: PointRelaisResume;
+  destination: PointRelaisResume;
+}
+
+/** La reponse de creation porte le code de retrait : 6 chiffres, renvoyes UNE SEULE FOIS. */
+export interface ColisCree extends Colis {
+  codeRetrait: string;
+}
+
+/** Le detail porte les transitions autorisees pour le role de l'appelant. */
+export interface ColisDetail extends Colis {
+  transitionsPossibles: StatutColis[];
 }
 
 export interface CreateColisData {
@@ -195,81 +322,150 @@ export interface CreateColisData {
   destinationId: number;
   destinataireNom: string;
   destinataireTel: string;
+  /** Obligatoire si service vaut DOMICILE. */
   destinataireAdresse?: string;
+  /** En KG, decimales acceptees. */
   poids: number;
   description?: string;
-  modePaiement: string;
+  service: TypeService;
+  modePaiement: ModePaiement;
 }
 
-// -- Cree un nouveau colis (commercant connecte) --
-export function creerColis(data: CreateColisData): Promise<Colis> {
+export function creerColis(data: CreateColisData): Promise<ColisCree> {
   return apiFetch("/colis", { method: "POST", body: JSON.stringify(data) });
 }
 
-// -- Recupere la liste des colis du commercant connecte --
-export function getMesColis(): Promise<Colis[]> {
-  return apiFetch("/colis/mes-colis");
+export interface ListeColisParams {
+  statut?: StatutColis | "";
+  clientId?: number;
+  recherche?: string;
+  page?: number;
+  parPage?: number;
 }
 
-// -- Recupere tous les colis (reserve aux admins/dispatchers) --
-export function getAllColis(statut?: string): Promise<Colis[]> {
-  const q = statut ? `?statut=${encodeURIComponent(statut)}` : "";
-  return apiFetch(`/colis${q}`);
+/**
+ * S'adapte au role : un CLIENT ne recoit que ses colis, le personnel voit tout.
+ * `clientId` est ignore par le serveur si l'appelant est un client.
+ */
+export function getColis(params: ListeColisParams = {}): Promise<Paginated<Colis>> {
+  return apiFetch(`/colis${query({ ...params })}`);
 }
 
-// -- Suivi public par numero de tracking (pas besoin d'etre connecte) --
-export function suivreColis(tracking: string): Promise<Colis & { evenements: unknown[] }> {
-  // On encode le tracking pour eviter les injections dans l'URL
-  return apiFetch(`/colis/tracking/${encodeURIComponent(tracking)}`);
+export function getColisDetail(id: number): Promise<ColisDetail> {
+  return apiFetch(`/colis/${id}`);
 }
 
-// -- Change le statut d'un colis (reserve aux agents et chauffeurs) --
-export function updateStatutColis(
-  id: number,
-  statut: string,
-  note?: string,
-  localisationId?: number
-): Promise<Colis> {
-  return apiFetch(`/colis/${id}/statut`, {
-    method: "PATCH",
-    body: JSON.stringify({ statut, note, localisationId }),
-  });
+export interface ChangerStatutData {
+  statut: StatutColis;
+  note?: string;
+  localisationId?: number;
+  /** Obligatoire pour passer a LIVRE. */
+  codeRetrait?: string;
+}
+
+export function changerStatutColis(id: number, data: ChangerStatutData): Promise<Colis> {
+  return apiFetch(`/colis/${id}/statut`, { method: "PATCH", body: JSON.stringify(data) });
+}
+
+/** Suivi public : reponse volontairement reduite (pas de telephone, montant ni adresse). */
+export interface SuiviPublic {
+  tracking: string;
+  statut: StatutColis;
+  /** Masque cote serveur, ex. "Fatou D." */
+  destinataireNom: string;
+  service: TypeService;
+  origine: PointRelaisResume;
+  destination: PointRelaisResume;
+  createdAt: string;
+  updatedAt: string;
+  evenements?: { statut: StatutColis; date: string; note?: string | null }[];
+}
+
+export function suivreColis(code: string): Promise<SuiviPublic> {
+  return apiFetch(`/colis/tracking/${encodeURIComponent(code)}`);
 }
 
 
 // ================================================================
-// COMMERCANT (profil, solde, transactions)
+// CLIENTS (profil, solde, transactions)
 // ================================================================
 
-export interface ProfilCommercant {
+export interface ProfilClient {
   id: number;
-  nomBoutique: string;
+  typeClient: TypeClient;
+  nomBoutique: string | null;
+  ville: string | null;
+  /** Entier XOF. Lecture seule : PATCH /clients/profil refuse ce champ. */
   soldeCompte: number;
+  user: {
+    id: number;
+    nom: string;
+    prenom: string;
+    email: string;
+    telephone: string;
+    role: Role;
+  };
+}
+
+export function getProfil(): Promise<ProfilClient> {
+  return apiFetch("/clients/profil");
+}
+
+export interface MajProfilData {
+  nom?: string;
+  prenom?: string;
+  telephone?: string;
+  nomBoutique?: string;
   ville?: string;
-  user: { nom: string; prenom: string; email: string; telephone: string };
 }
 
-// -- Profil et solde du commercant connecte --
-export function getMonProfil(): Promise<ProfilCommercant> {
-  return apiFetch("/commercants/profil");
+/** N'accepte ni soldeCompte, ni typeClient, ni role : le serveur renvoie 400. */
+export function majProfil(data: MajProfilData): Promise<ProfilClient> {
+  return apiFetch("/clients/profil", { method: "PATCH", body: JSON.stringify(data) });
 }
 
-// -- Recharge le compte prepaye --
-export function rechargerSolde(montant: number, methode: string) {
-  return apiFetch("/commercants/recharger", {
+export interface Transaction {
+  id: number;
+  reference: string;
+  type: TypeTransaction;
+  montant: number;
+  statut: StatutTransaction;
+  description: string | null;
+  createdAt: string;
+}
+
+export function getTransactions(page = 1, parPage = 20): Promise<Paginated<Transaction>> {
+  return apiFetch(`/clients/transactions${query({ page, parPage })}`);
+}
+
+/** Reponse de /clients/recharger : plus etroite qu'une transaction complete. */
+export interface DemandeRecharge {
+  id: number;
+  reference: string;
+  montant: number;
+  statut: StatutTransaction;
+  createdAt: string;
+}
+
+/**
+ * Ne credite RIEN : cree une transaction ATTENTE et renvoie sa reference.
+ * Le solde n'augmente qu'apres confirmation par CinetPay.
+ */
+export function rechargerCompte(montant: number): Promise<DemandeRecharge> {
+  return apiFetch("/clients/recharger", {
     method: "POST",
-    body: JSON.stringify({ montant, methode }),
+    body: JSON.stringify({ montant, methode: "CINETPAY" }),
   });
 }
 
-// -- Historique des transactions du commercant --
-export function getMesTransactions() {
-  return apiFetch("/commercants/transactions");
+/** Renvoie 503 tant que les cles CinetPay ne sont pas configurees. */
+export function creerLienPaiement(reference: string): Promise<{ urlPaiement: string }> {
+  return apiFetch(`/paiements/${encodeURIComponent(reference)}/lien`, { method: "POST" });
 }
 
 
 // ================================================================
-// POINTS RELAIS
+// POINTS RELAIS ET TARIFS (publics)
 // ================================================================
 
 export interface PointRelais {
@@ -281,23 +477,55 @@ export interface PointRelais {
   telephone: string;
 }
 
-// -- Liste tous les points relais actifs --
-export function getPointsRelais(): Promise<PointRelais[]> {
-  return apiFetch("/points-relais");
+export function getPointsRelais(ville?: string): Promise<PointRelais[]> {
+  return apiFetch(`/points-relais${query({ ville })}`);
+}
+
+export function getVilles(): Promise<string[]> {
+  return apiFetch("/points-relais/villes");
+}
+
+export interface CalculTarif {
+  montantTransport: number;
+  montantSupplement: number;
+  montant: number;
+  source: "grille";
+  origine: string;
+  destination: string;
+  poidsKg: number;
+  service: TypeService;
+}
+
+/**
+ * `service` fait partie du calcul : sans lui, le supplement domicile
+ * n'est pas facture et l'affichage ment sur le prix.
+ * Renvoie 404 si le trajet n'est pas dans la grille.
+ */
+export function calculerPrix(
+  origine: string,
+  destination: string,
+  poids: number,
+  service: TypeService
+): Promise<CalculTarif> {
+  return apiFetch(`/tarifs/calculer${query({ origine, destination, poids, service })}`);
+}
+
+export function getGrilleTarifs(): Promise<unknown> {
+  return apiFetch("/tarifs/grille");
 }
 
 
 // ================================================================
-// TARIFS
+// UTILISATEURS
 // ================================================================
 
-// -- Calcule le prix pour un trajet + poids donne --
-export function calculerPrix(
-  origine: string,
-  destination: string,
-  poids: number
-): Promise<{ prix: number; source: string }> {
-  return apiFetch(
-    `/tarifs/calculer?origine=${encodeURIComponent(origine)}&destination=${encodeURIComponent(destination)}&poids=${encodeURIComponent(poids)}`
-  );
+/** Accessible a tous. Revoque toutes les autres sessions. */
+export function changerMotDePasse(
+  motDePasseActuel: string,
+  nouveauMotDePasse: string
+): Promise<{ success: boolean }> {
+  return apiFetch("/users/moi/mot-de-passe", {
+    method: "PATCH",
+    body: JSON.stringify({ motDePasseActuel, nouveauMotDePasse }),
+  });
 }

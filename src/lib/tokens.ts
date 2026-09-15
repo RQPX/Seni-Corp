@@ -62,6 +62,45 @@ export const colors = {
 } as const;
 
 
+// -- Palette a plat --
+// Meme source que `colors` ci-dessus, mais sous une forme directement
+// utilisable dans les styles en ligne : `style={{ color: C.emerald }}`.
+// Chaque page importait auparavant sa propre copie de ces valeurs.
+export const C = {
+  emerald:      colors.emerald.DEFAULT,
+  emeraldDark:  colors.emerald.dark,
+  emeraldLight: colors.emerald.light,
+  emeraldSoft:  colors.emerald.soft,
+
+  bronze:      colors.bronze.DEFAULT,
+  bronzeLight: colors.bronze.light,
+  bronzeSoft:  colors.bronze.soft,
+
+  ivory:    colors.ivory,
+  sage:     colors.sage.DEFAULT,
+  sageDark: colors.sage.dark,
+
+  anthracite: colors.anthracite,
+  taupe:      colors.taupe.DEFAULT,
+  taupeLight: colors.taupe.light,
+
+  terra:     colors.terra.DEFAULT,
+  terraSoft: colors.terra.soft,
+
+  border:       colors.border.DEFAULT,
+  borderStrong: colors.border.strong,
+  borderSubtle: colors.border.subtle,
+
+  success:     colors.success,
+  successSoft: colors.emerald.soft,
+  warning:     "#B88838",
+  warningSoft: "#FEF3E5",
+  error:       colors.error,
+
+  white: "#FFFFFF",
+} as const;
+
+
 // -- Typographie --
 // 3 familles avec des roles bien definis
 export const fonts = {

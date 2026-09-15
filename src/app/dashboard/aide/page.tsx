@@ -8,13 +8,7 @@
 
 import { useState } from "react";
 import { HelpCircle, ChevronDown, ChevronUp, MessageCircle, Phone, Mail, BookOpen, Package, CreditCard, Truck } from "lucide-react";
-
-const C = {
-  emerald: "#0B4D3F", emeraldLight: "#1A6B58", emeraldSoft: "#E8F0ED",
-  bronze: "#B8935A", bronzeLight: "#D4B486", bronzeSoft: "#F5EFE3",
-  ivory: "#FAF6F0", sage: "#E8EDE5", anthracite: "#1A1A1A",
-  taupe: "#6B6259", taupeLight: "#9B8A7E", border: "#EAE3D5", white: "#FFFFFF",
-};
+import { C } from "@/lib/tokens";
 
 const FAQ = [
   { question: "Comment envoyer un colis ?", answer: "Cliquez sur \"Nouveau colis\" dans le menu, remplissez les 4 etapes (trajet, service, colis, destinataire), puis payez. Votre colis sera pris en charge dans les 24 heures.", icon: Package },

@@ -1,10 +1,10 @@
 // ============================================================
 // SENI CORP — Middleware
-// Ce fichier s'execute AVANT chaque page/API du site.
+// Ce fichier s'execute AVANT chaque page du site.
 // Il fait 3 choses :
 //   1. Genere un jeton unique (nonce) pour securiser les scripts
 //   2. Applique la Content-Security-Policy (bloque les scripts pirates)
-//   3. Ajoute des en-tetes de securite specifiques a chaque requete
+//   3. Garde l'acces au dashboard derriere une session valide
 // ============================================================
 
 import { NextResponse } from "next/server";
@@ -14,20 +14,36 @@ import type { NextRequest } from "next/server";
 // En dev, on est plus permissif pour laisser marcher les outils de debug
 const isProduction = process.env.NODE_ENV === "production";
 
-// -- Nom du cookie de session --
-// TODO verifier le nom du cookie cote backend
-// A ce jour, POST /auth/login (NestJS) renvoie le JWT dans le corps JSON
-// et ne pose AUCUN cookie : cette garde reste inactive tant que le backend
-// ne pose pas ce cookie httpOnly a la connexion (voir aussi /auth/logout, /auth/me).
-const SESSION_COOKIE = "seni_session";
+// -- Cookie sur lequel s'appuie la garde --
+//
+// Ni seni_session ni seni_refresh ne conviennent ici :
+//   - seni_session (Path=/) ne vit que 15 minutes. S'en servir renverrait
+//     l'utilisateur vers /login toutes les 15 minutes alors que sa session
+//     est encore valide.
+//   - seni_refresh porte bien la duree reelle de la session (7 jours) mais
+//     le backend le pose avec Path=/api/v1/auth : le navigateur ne l'envoie
+//     donc JAMAIS sur une requete de page. Une garde basee dessus redirige
+//     en boucle, meme connecte (verifie le 15/09/2026).
+//
+// seni_csrf est le seul cookie visible sur "/" dont la duree suit celle de
+// la session : pose a la connexion, a l'inscription et a chaque refresh,
+// efface au logout, Max-Age 7 jours.
+//
+// C'est une garde de confort, pas une frontiere de securite : ce cookie est
+// lisible et donc falsifiable. La vraie protection reste le backend, qui
+// rejette toute requete sans session valide — un visiteur qui forgerait ce
+// cookie n'obtiendrait qu'une coquille vide renvoyee vers /login au premier
+// appel d'API. Si le backend expose un jour seni_refresh sur Path=/, c'est
+// lui qu'il faudra utiliser ici.
+const SESSION_HINT_COOKIE = "seni_csrf";
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // -- Garde d'authentification --
-  const session = request.cookies.get(SESSION_COOKIE);
+  const session = request.cookies.get(SESSION_HINT_COOKIE);
   const isProtected = pathname.startsWith("/dashboard");
-  const isAuthPage = pathname.startsWith("/login");
+  const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/inscription");
 
   if (isProtected && !session) {
     const url = request.nextUrl.clone();
@@ -72,10 +88,11 @@ export function middleware(request: NextRequest) {
     // Images : notre domaine + Mapbox + S3 + data URIs (icones SVG)
     `img-src 'self' data: blob: https://*.mapbox.com https://seni-corp.s3.af-south-1.amazonaws.com`,
 
-    // Connexions API : notre domaine + backend NestJS + services partenaires
-    `connect-src 'self' ${
-      process.env.NEXT_PUBLIC_API_URL ?? ""
-    } https://*.mapbox.com https://api.cinetpay.com https://api.wave.com`,
+    // Connexions API : l'API passe par notre propre domaine (proxy Next),
+    // donc 'self' suffit. Une source CSP dont le chemin ne finit pas par "/"
+    // exige une correspondance exacte : mettre une URL avec chemin ici
+    // (".../api/v1") bloquerait tous les appels vers ".../api/v1/auth/login".
+    `connect-src 'self' https://*.mapbox.com`,
 
     // Pas d'objets Flash/Java (obsoletes et dangereux)
     `object-src 'none'`,
@@ -109,7 +126,6 @@ export function middleware(request: NextRequest) {
   // -- Applique la CSP dans la reponse envoyee au navigateur --
   // En production : mode strict (bloque tout ce qui viole la regle)
   // En dev : mode Report-Only (log les violations sans bloquer)
-  // Passer en mode strict quand on est sur qu'aucun script legitime n'est bloque
   if (isProduction) {
     response.headers.set("Content-Security-Policy", csp);
   } else {
@@ -121,10 +137,10 @@ export function middleware(request: NextRequest) {
 
 // -- Ou s'applique le middleware --
 // On l'applique partout SAUF sur les fichiers statiques (images, CSS...)
-// pour ne pas ralentir le site
+// et sauf sur /api/v1 (proxifie vers le backend : ni CSP ni garde a y ajouter).
 export const config = {
-  // Pas de "missing" ici : la garde d'authentification (A1) doit aussi
-  // s'appliquer aux requetes de prechargement des <Link>, sinon elle est
-  // contournee en continu par la navigation normale du site.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)"],
+  // Pas de "missing" ici : la garde d'authentification doit aussi s'appliquer
+  // aux requetes de prechargement des <Link>, sinon elle est contournee en
+  // continu par la navigation normale du site.
+  matcher: ["/((?!api/|_next/static|_next/image|favicon.ico|.*\\..*).*)"],
 };

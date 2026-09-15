@@ -11,6 +11,7 @@
 import type { Metadata, Viewport } from "next";
 import { Manrope, Inter, JetBrains_Mono } from "next/font/google";
 import { headers } from "next/headers";
+import { Providers } from "./providers";
 import "@/styles/globals.css";
 
 // -- Chargement des polices depuis Google Fonts --
@@ -99,7 +100,7 @@ export default async function RootLayout({
         // Injecte le nonce pour que les scripts Next.js legitimes soient autorises
         data-nonce={nonce}
       >
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

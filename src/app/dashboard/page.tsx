@@ -1,57 +1,55 @@
 // ============================================================
 // SENI CORP — Page Tableau de bord
-// Page d'accueil du commercant apres connexion.
-// Affiche : solde, nombre de colis, activite recente, graphique,
-// et la liste des colis recents filtrable.
+// Page d'accueil du client apres connexion.
+// Toutes les donnees viennent du backend : solde, colis, activite.
 // ============================================================
 
 "use client";
 
 import { useState, useMemo } from "react";
-import { useAppStore } from "@/store/appStore";
 import {
   ArrowUpRight, CheckCircle2, MapPin, Truck, Clock,
-  ChevronRight, AlertTriangle, XCircle, RotateCcw
+  ChevronRight, AlertTriangle, XCircle, RotateCcw, Package
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid
 } from "recharts";
 import { FilterTabs } from "@/components/ui/FilterTabs";
-import { statutConfig } from "@/lib/statuts";
+import { statutConfig, type StatutColis } from "@/lib/statuts";
 import { formatDateFr } from "@/lib/utils";
-
-// Palette de la marque
-const C = {
-  emerald: "#0B4D3F", emeraldLight: "#1A6B58", emeraldSoft: "#E8F0ED",
-  bronze: "#B8935A", bronzeLight: "#D4B486", bronzeSoft: "#F5EFE3",
-  ivory: "#FAF6F0", sage: "#E8EDE5", anthracite: "#1A1A1A",
-  taupe: "#6B6259", taupeLight: "#9B8A7E", terra: "#C66D4F",
-  border: "#EAE3D5", success: "#4A6B5C", white: "#FFFFFF",
-};
+import { useColis, useProfil, useTransactions } from "@/lib/queries";
+import { C } from "@/lib/tokens";
 
 // Mois en francais pour le graphique
 const MOIS = ["jan","fev","mar","avr","mai","jun","jul","aou","sep","oct","nov","dec"];
 
 // Icone de chaque statut (couleurs et libelle lus depuis statutConfig)
 const STATUT_ICONS: Record<string, typeof Clock> = {
-  livre:      CheckCircle2,
-  attente:    MapPin,
-  transit:    Truck,
-  cree:       Clock,
-  retarde:    AlertTriangle,
-  annule:     XCircle,
-  retourne:   RotateCcw,
+  CREE:               Clock,
+  PRIS_EN_CHARGE:     Package,
+  EN_TRANSIT:         Truck,
+  ARRIVE_HUB:         MapPin,
+  EN_ATTENTE_RETRAIT: MapPin,
+  EN_LIVRAISON:       Truck,
+  LIVRE:              CheckCircle2,
+  RETOURNE:           RotateCcw,
+  PERDU:              XCircle,
+  INCIDENT:           AlertTriangle,
+  ANNULE:             XCircle,
 };
 
 // Options du filtre affichees en haut du tableau
 const FILTER_OPTIONS = [
-  { value: "tous",    label: "Tous" },
-  { value: "livre",   label: "Livres" },
-  { value: "attente", label: "En attente retrait" },
-  { value: "transit", label: "En transit" },
-  { value: "cree",    label: "Crees" },
+  { value: "",                   label: "Tous" },
+  { value: "LIVRE",              label: "Livres" },
+  { value: "EN_ATTENTE_RETRAIT", label: "En attente retrait" },
+  { value: "EN_TRANSIT",         label: "En transit" },
+  { value: "CREE",               label: "Crees" },
 ];
+
+// Nombre de colis charges pour alimenter le graphique et l'activite recente
+const TAILLE_APERCU = 50;
 
 // -- Petit badge colore selon le statut --
 function StatusBadge({ statut }: { statut: string }) {
@@ -132,7 +130,6 @@ function KpiCard({ label, value, unit, trendLabel, featured = false }: {
         <span style={{
           fontFamily: "var(--font-heading)", fontSize: "30px", fontWeight: 700,
           color: featured ? C.white : C.anthracite, lineHeight: 1,
-          // Coupe les nombres trop grands
           wordBreak: "break-word",
         }}>
           {value}
@@ -162,18 +159,28 @@ function KpiCard({ label, value, unit, trendLabel, featured = false }: {
 // PAGE PRINCIPALE
 // ============================================================
 export default function DashboardPage() {
-  // Lit les donnees depuis le store global (partage entre pages)
-  const { colis, solde, transactions } = useAppStore();
+  const [activeFilter, setActiveFilter] = useState("");
 
-  const [activeFilter, setActiveFilter] = useState("tous");
+  // Profil et solde (le solde n'est jamais calcule ici)
+  const { data: profil } = useProfil();
 
-  // -- Colis filtres, limites aux 5 plus recents --
-  const filteredColis = useMemo(() => {
-    const base = activeFilter === "tous"
-      ? colis
-      : colis.filter((c) => c.statut === activeFilter);
-    return base.slice(0, 5);
-  }, [activeFilter, colis]);
+  // Apercu : alimente le graphique, l'activite recente et le total
+  const { data: apercu } = useColis({ page: 1, parPage: TAILLE_APERCU });
+
+  // Total de colis livres : une requete d'une ligne suffit, on ne lit que `total`
+  const { data: livres } = useColis({ statut: "LIVRE", page: 1, parPage: 1 });
+
+  // Les 5 colis du tableau, filtres cote serveur
+  const { data: recents, isPending: recentsPending } = useColis({
+    statut: (activeFilter || undefined) as StatutColis | undefined,
+    page: 1,
+    parPage: 5,
+  });
+
+  const { data: transactions } = useTransactions(1, 5);
+
+  const totalColis = apercu?.total ?? 0;
+  const totalLivres = livres?.total ?? 0;
 
   // -- Donnees du graphique : 14 derniers jours --
   const chartData = useMemo(() => {
@@ -183,11 +190,10 @@ export default function DashboardPage() {
 
     // On compte une seule fois, en O(n) au lieu de 14 filtres
     const parJour = new Map<string, number>();
-    colis.forEach((c) => {
+    (apercu?.elements ?? []).forEach((c) => {
       const d = new Date(c.createdAt);
-      if (isNaN(d.getTime())) return;          // date invalide : on ignore
-      const k = dayKey(d);
-      parJour.set(k, (parJour.get(k) ?? 0) + 1);
+      if (isNaN(d.getTime())) return;
+      parJour.set(dayKey(d), (parJour.get(dayKey(d)) ?? 0) + 1);
     });
 
     const today = new Date();
@@ -199,70 +205,58 @@ export default function DashboardPage() {
         : String(d.getDate());
       return { jour, colis: parJour.get(dayKey(d)) ?? 0 };
     });
-  }, [colis]);
+  }, [apercu]);
 
   // -- Activite recente : fusion colis + transactions triee par date --
   const recentActivity = useMemo(() => {
-    // Accepte "27/04/2026" et "27/04/2026 10:15"
-    const parseDate = (s: string) => {
-      const [datePart, timePart] = String(s).trim().split(" ");
-      const [d, m, y] = datePart.split("/").map(Number);
-      const [hh = 0, mn = 0] = (timePart ?? "").split(":").map(Number);
-      const t = new Date(y, m - 1, d, hh, mn).getTime();
-      return Number.isNaN(t) ? 0 : t;
-    };
     const items = [
-      ...colis.slice(0, 5).map((c) => ({
-        key: c.tracking, tracking: c.tracking,
-        action: `cree — ${c.origine} vers ${c.destination}`,
-        date: formatDateFr(c.createdAt), dotColor: C.emerald,
+      ...(apercu?.elements ?? []).slice(0, 5).map((c) => ({
+        key: `colis-${c.id}`,
+        tracking: c.tracking,
+        action: `cree — ${c.origine.ville} vers ${c.destination.ville}`,
+        iso: c.createdAt,
+        dotColor: C.emerald,
       })),
-      ...transactions.slice(0, 5).map((tx) => ({
-        key: String(tx.id), tracking: "",
-        action: tx.desc,
-        date: tx.date, dotColor: tx.montant > 0 ? C.bronze : C.taupe,
+      ...(transactions?.elements ?? []).slice(0, 5).map((tx) => ({
+        key: `tx-${tx.id}`,
+        tracking: "",
+        action: tx.description ?? tx.type,
+        iso: tx.createdAt,
+        dotColor: tx.type === "RECHARGE" ? C.bronze : C.taupe,
       })),
     ];
-    return items.sort((a, b) => parseDate(b.date) - parseDate(a.date)).slice(0, 5);
-  }, [colis, transactions]);
+    return items
+      .sort((a, b) => new Date(b.iso).getTime() - new Date(a.iso).getTime())
+      .slice(0, 5);
+  }, [apercu, transactions]);
 
-  // -- Pourcentage de colis livres --
-  const livresPercent = useMemo(() => {
-    if (colis.length === 0) return 0;
-    const livres = colis.filter((c) => c.statut === "livre").length;
-    return Math.round((livres / colis.length) * 100);
-  }, [colis]);
+  const livresPercent = totalColis === 0 ? 0 : Math.round((totalLivres / totalColis) * 100);
 
   return (
     <div
       className="px-4 py-5 md:px-8 md:py-7 mx-auto"
-      style={{
-        maxWidth: "1400px",
-        width: "100%",
-        // Empeche tout debordement horizontal (garde le contenu dans le viewport)
-        minWidth: 0,
-      }}
+      style={{ maxWidth: "1400px", width: "100%", minWidth: 0 }}
     >
       {/* -- Section KPIs (3 cartes en haut) -- */}
       <section aria-label="Indicateurs cles">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 mb-6 md:mb-7">
           <KpiCard
             label="Solde du compte"
-            value={solde.toLocaleString("fr")}
+            value={profil ? profil.soldeCompte.toLocaleString("fr") : "—"}
             unit="XOF"
             trendLabel="Mis a jour en temps reel"
             featured
           />
           <KpiCard
             label="Colis enregistres"
-            value={colis.length.toString()}
-            trendLabel={colis.length > 0 ? `${colis.length} colis au total` : "Aucun colis pour l'instant"}
+            value={totalColis.toString()}
+            trendLabel={totalColis > 0 ? `${totalColis} colis au total` : "Aucun colis pour l'instant"}
           />
           <KpiCard
             label="Colis livres"
             value={livresPercent.toString()}
             unit="%"
-            trendLabel={`${colis.filter(c => c.statut === "livre").length} colis livres`}
+            trendLabel={`${totalLivres} colis livres`}
           />
         </div>
       </section>
@@ -277,7 +271,7 @@ export default function DashboardPage() {
             backgroundColor: C.white,
             border: `1px solid ${C.border}`,
             padding: "22px",
-            minWidth: 0, // empeche le graphique de sortir de la carte
+            minWidth: 0,
           }}
         >
           <div className="flex items-center justify-between mb-5">
@@ -289,7 +283,7 @@ export default function DashboardPage() {
             <BarChart data={chartData} barCategoryGap="25%">
               <CartesianGrid strokeDasharray="4 4" stroke={C.border} vertical={false} />
               <XAxis dataKey="jour" tick={{ fill: C.taupe, fontSize: 10, fontFamily: "Manrope" }} axisLine={{ stroke: C.border }} tickLine={false} />
-              <YAxis tick={{ fill: C.taupe, fontSize: 10, fontFamily: "Manrope" }} axisLine={false} tickLine={false} width={30} />
+              <YAxis tick={{ fill: C.taupe, fontSize: 10, fontFamily: "Manrope" }} axisLine={false} tickLine={false} width={30} allowDecimals={false} />
               <Tooltip content={<ChartTooltip />} cursor={{ fill: C.emeraldSoft }} />
               <Bar dataKey="colis" fill={C.emerald} radius={[4, 4, 0, 0]} maxBarSize={36} />
             </BarChart>
@@ -329,7 +323,7 @@ export default function DashboardPage() {
                   )}
                   {item.action}
                 </p>
-                <p style={{ fontSize: "10px", color: C.taupeLight, marginTop: "3px" }}>{item.date}</p>
+                <p style={{ fontSize: "10px", color: C.taupeLight, marginTop: "3px" }}>{formatDateFr(item.iso)}</p>
               </div>
             </div>
           ))}
@@ -351,9 +345,7 @@ export default function DashboardPage() {
             <h2 style={{ fontFamily: "var(--font-heading)", fontSize: "15px", fontWeight: 700, color: C.anthracite, marginBottom: "12px" }}>
               Colis recents
             </h2>
-            {/* -- FIX DROPDOWN MOBILE -- */}
-            {/* Sur telephone : dropdown natif (facile a manipuler au doigt) */}
-            {/* Sur desktop : pilules horizontales classiques */}
+            {/* Sur telephone : dropdown natif. Sur desktop : pilules horizontales. */}
             <FilterTabs
               options={FILTER_OPTIONS}
               value={activeFilter}
@@ -362,7 +354,6 @@ export default function DashboardPage() {
             />
           </div>
 
-          {/* -- Tableau des colis -- */}
           {/* scroll-x-contain isole le scroll horizontal (ne pousse pas la page) */}
           <div className="scroll-x-contain">
             <table className="w-full" style={{ minWidth: "640px" }}>
@@ -387,19 +378,23 @@ export default function DashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredColis.length === 0 ? (
+                {recentsPending ? (
+                  <tr>
+                    <td colSpan={6} style={{ padding: "32px", textAlign: "center", fontSize: "13px", color: C.taupe }}>
+                      Chargement...
+                    </td>
+                  </tr>
+                ) : (recents?.elements.length ?? 0) === 0 ? (
                   <tr>
                     <td colSpan={6} style={{ padding: "32px", textAlign: "center", fontSize: "13px", color: C.taupe }}>
                       Aucun colis avec ce filtre.
                     </td>
                   </tr>
-                ) : filteredColis.map((item, idx) => (
+                ) : recents!.elements.map((item, idx) => (
                   <tr
-                    key={item.tracking}
-                    className="transition-colors duration-150 cursor-pointer"
+                    key={item.id}
+                    className="transition-colors duration-150"
                     style={{ borderBottom: `1px solid ${C.border}`, backgroundColor: idx % 2 === 0 ? "transparent" : C.ivory }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = C.sage}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = idx % 2 === 0 ? "transparent" : C.ivory}
                   >
                     <td style={{ padding: "14px 20px" }}>
                       <span style={{ fontFamily: "var(--font-mono)", fontSize: "12px", fontWeight: 600, color: C.emerald }}>
@@ -407,11 +402,11 @@ export default function DashboardPage() {
                       </span>
                     </td>
                     <td style={{ padding: "14px 20px", fontSize: "13px", color: C.anthracite }}>
-                      <strong>{item.origine}</strong>
-                      <span style={{ color: C.bronze, margin: "0 8px" }}>{"\u2192"}</span>
-                      <strong>{item.destination}</strong>
+                      <strong>{item.origine.ville}</strong>
+                      <span style={{ color: C.bronze, margin: "0 8px" }}>{"→"}</span>
+                      <strong>{item.destination.ville}</strong>
                     </td>
-                    <td style={{ padding: "14px 20px", fontSize: "13px", color: C.taupe }}>{item.destinataire}</td>
+                    <td style={{ padding: "14px 20px", fontSize: "13px", color: C.taupe }}>{item.destinataireNom}</td>
                     <td style={{ padding: "14px 20px" }}>
                       <StatusBadge statut={item.statut} />
                     </td>
@@ -420,12 +415,7 @@ export default function DashboardPage() {
                       <span style={{ color: C.taupe, fontSize: "11px", fontWeight: 400 }}> XOF</span>
                     </td>
                     <td style={{ padding: "14px 12px" }}>
-                      <button
-                        aria-label={`Detail ${item.tracking}`}
-                        style={{ background: "none", border: "none", color: C.taupeLight, cursor: "pointer" }}
-                      >
-                        <ChevronRight size={16} />
-                      </button>
+                      <ChevronRight size={16} style={{ color: C.taupeLight }} />
                     </td>
                   </tr>
                 ))}
@@ -434,7 +424,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex items-center justify-between px-5 py-3" style={{ borderTop: `1px solid ${C.border}`, fontSize: "12px", color: C.taupe }}>
-            <span>{filteredColis.length} colis affiches sur {colis.length}</span>
+            <span>{recents?.elements.length ?? 0} colis affiches sur {recents?.total ?? 0}</span>
           </div>
         </div>
       </section>

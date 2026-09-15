@@ -17,16 +17,10 @@ import {
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
+import { useQueryClient } from "@tanstack/react-query";
 import { logout as apiLogout } from "@/lib/api";
-
-// Palette de couleurs de la marque
-const C = {
-  emerald: "#0B4D3F", emeraldDark: "#083528", emeraldLight: "#1A6B58",
-  emeraldSoft: "#E8F0ED", bronze: "#B8935A", bronzeLight: "#D4B486",
-  ivory: "#FAF6F0", sage: "#E8EDE5", anthracite: "#1A1A1A",
-  taupe: "#6B6259", taupeLight: "#9B8A7E", terra: "#C66D4F",
-  border: "#EAE3D5", success: "#4A6B5C", white: "#FFFFFF",
-};
+import { useProfil, useUtilisateur } from "@/lib/queries";
+import { C } from "@/lib/tokens";
 
 // -- Menu principal --
 // Chaque entree a un lien, une etiquette, une icone et une section (groupe)
@@ -40,14 +34,10 @@ const NAV_ITEMS = [
   { href: "/dashboard/aide",      label: "Aide",            icon: HelpCircle,      section: "Compte" },
 ];
 
-// -- Notifications de demonstration --
-// A remplacer par un vrai appel API plus tard
-const NOTIFICATIONS = [
-  { id: 1, text: "Colis SC-2026-A8K4M2 livre a Korhogo",           time: "il y a 12 min", read: false },
-  { id: 2, text: "Colis SC-2026-B2F7N9 arrive au relais Bouake",   time: "il y a 45 min", read: false },
-  { id: 3, text: "Recharge de 50 000 XOF confirmee via CinetPay",  time: "il y a 1 h",    read: true },
-  { id: 4, text: "Facture mars 2026 disponible",                    time: "il y a 2 jours", read: true },
-];
+// -- Initiales affichees dans l'avatar --
+function initiales(prenom?: string, nom?: string): string {
+  return `${prenom?.[0] ?? ""}${nom?.[0] ?? ""}`.toUpperCase() || "--";
+}
 
 
 // ============================================================
@@ -58,15 +48,22 @@ const NOTIFICATIONS = [
 function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  const { data: user } = useUtilisateur();
+  const { data: profil } = useProfil();
 
   // Suivi de la derniere section pour afficher un titre de groupe une seule fois
   let lastSection = "";
 
   const handleLogout = async () => {
     setShowLogoutConfirm(false);
-    // Invalide la session cote backend (efface le cookie httpOnly)
+    // Invalide la session cote backend (efface les cookies httpOnly)
     await apiLogout();
+    // Vide le cache : sans ca, le prochain compte connecte verrait
+    // brievement les donnees du precedent.
+    queryClient.clear();
     // replace() : empeche le retour arriere vers le dashboard
     router.replace("/login");
   };
@@ -171,11 +168,21 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
               background: `linear-gradient(135deg, ${C.bronze}, ${C.bronzeLight})`,
               fontFamily: "var(--font-heading)", fontSize: "13px", fontWeight: 700, color: C.emeraldDark,
             }}>
-              SN
+              {initiales(user?.prenom, user?.nom)}
             </div>
             <div className="flex-1 min-w-0">
-              <div style={{ fontSize: "13px", fontWeight: 600, color: C.white }}>Seni N'Diaye</div>
-              <div style={{ fontSize: "10px", color: "rgba(250, 246, 240, 0.6)" }}>Mode Adjame</div>
+              <div style={{
+                fontSize: "13px", fontWeight: 600, color: C.white,
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              }}>
+                {user ? `${user.prenom} ${user.nom}` : "—"}
+              </div>
+              <div style={{
+                fontSize: "10px", color: "rgba(250, 246, 240, 0.6)",
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              }}>
+                {profil?.nomBoutique ?? profil?.ville ?? user?.email ?? ""}
+              </div>
             </div>
             <button
               onClick={() => setShowLogoutConfirm(true)}
@@ -235,6 +242,7 @@ function TopBar({ onMenuOpen }: { onMenuOpen: () => void }) {
   const searchRef = useRef<HTMLInputElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const { data: user } = useUtilisateur();
 
   // -- Ferme le panneau notifs si on clique en dehors --
   useEffect(() => {
@@ -261,8 +269,6 @@ function TopBar({ onMenuOpen }: { onMenuOpen: () => void }) {
     }
   };
 
-  const unreadCount = NOTIFICATIONS.filter((n) => !n.read).length;
-
   return (
     <header
       className="relative shrink-0"
@@ -280,8 +286,8 @@ function TopBar({ onMenuOpen }: { onMenuOpen: () => void }) {
             <Menu size={22} />
           </button>
           <div className="min-w-0">
-            <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "18px", fontWeight: 600, color: C.anthracite, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              BONJOUR SENI
+            <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "18px", fontWeight: 600, color: C.anthracite, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textTransform: "uppercase" }}>
+              {user ? `Bonjour ${user.prenom}` : "Bonjour"}
             </h1>
             <p style={{ fontSize: "12px", color: C.taupe, marginTop: "2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               {new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
@@ -307,12 +313,12 @@ function TopBar({ onMenuOpen }: { onMenuOpen: () => void }) {
             {searchOpen ? <X size={17} strokeWidth={1.8} /> : <Search size={17} strokeWidth={1.8} />}
           </button>
 
-          {/* Bouton notifications avec pastille rouge si non-lues */}
+          {/* Bouton notifications (aucun endpoint backend a ce jour) */}
           <div ref={notifRef} className="relative">
             <button
               onClick={() => { setNotifOpen(!notifOpen); setSearchOpen(false); }}
               className="relative flex items-center justify-center rounded-lg"
-              aria-label={`Notifications, ${unreadCount} nouvelles`}
+              aria-label="Notifications"
               aria-expanded={notifOpen}
               style={{
                 width: "40px", height: "40px",
@@ -323,17 +329,6 @@ function TopBar({ onMenuOpen }: { onMenuOpen: () => void }) {
               }}
             >
               <Bell size={17} strokeWidth={1.8} />
-              {unreadCount > 0 && (
-                <span
-                  className="absolute rounded-full"
-                  style={{
-                    top: "6px", right: "6px",
-                    width: "8px", height: "8px",
-                    backgroundColor: C.terra,
-                    border: `2px solid ${notifOpen ? C.emerald : C.sage}`,
-                  }}
-                />
-              )}
             </button>
           </div>
 
@@ -446,54 +441,16 @@ function TopBar({ onMenuOpen }: { onMenuOpen: () => void }) {
                 </button>
               </div>
 
-              {/* Liste des notifs (scrollable en interne) */}
-              {NOTIFICATIONS.length === 0 ? (
-                <div className="px-4 py-8 text-center">
-                  <Bell size={28} style={{ color: C.border, margin: "0 auto 10px" }} />
-                  <p style={{ fontSize: "13px", color: C.taupe }}>Aucune notification</p>
-                </div>
-              ) : (
-                <div style={{
-                  // Scrollable si beaucoup de notifs
-                  overflowY: "auto",
-                  // Max-height calculee pour laisser de la place a l'en-tete + safe-area
-                  maxHeight: "calc(70dvh - 120px)",
-                  WebkitOverflowScrolling: "touch",
-                  overscrollBehavior: "contain",
-                }}>
-                  {NOTIFICATIONS.map((n) => (
-                    <button
-                      key={n.id}
-                      className="w-full text-left transition-colors"
-                      style={{
-                        padding: "12px 16px",
-                        borderBottom: `1px solid ${C.border}`,
-                        backgroundColor: n.read ? "transparent" : C.emeraldSoft,
-                        cursor: "pointer",
-                        border: "none",
-                        borderBottomWidth: "1px",
-                        borderBottomStyle: "solid",
-                        borderBottomColor: C.border,
-                        display: "block",
-                      }}
-                    >
-                      <div className="flex items-start gap-2.5">
-                        {!n.read && (
-                          <span
-                            className="rounded-full shrink-0 mt-1.5"
-                            style={{ width: "6px", height: "6px", backgroundColor: C.emerald }}
-                            aria-label="Non lu"
-                          />
-                        )}
-                        <div className={n.read ? "ml-3.5 flex-1" : "flex-1"}>
-                          <p style={{ fontSize: "13px", color: C.anthracite, lineHeight: 1.5 }}>{n.text}</p>
-                          <p style={{ fontSize: "11px", color: C.taupeLight, marginTop: "3px" }}>{n.time}</p>
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
+              {/* Aucun endpoint de notifications cote backend a ce jour. */}
+              <div className="px-4 py-8 text-center">
+                <Bell size={28} style={{ color: C.border, margin: "0 auto 10px" }} />
+                <p style={{ fontFamily: "var(--font-heading)", fontSize: "14px", fontWeight: 600, color: C.taupe }}>
+                  Bientot disponible
+                </p>
+                <p style={{ fontSize: "12px", color: C.taupeLight, marginTop: "4px", lineHeight: 1.5 }}>
+                  Les notifications seront activees des que le suivi temps reel sera en place.
+                </p>
+              </div>
 
               {/* Padding en bas pour tenir compte du safe-area sur iPhone */}
               <div style={{ height: "env(safe-area-inset-bottom)" }} className="md:hidden" />
