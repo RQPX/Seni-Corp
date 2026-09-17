@@ -349,4 +349,11 @@ code,
   max-width: 100%;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
+
+  /* Sert de reference aux enfants en position absolue, par exemple les
+     libelles .sr-only des en-tetes de tableau. Sans ca, ces enfants se
+     positionnent par rapport a la page entiere : places au bout d'un tableau
+     plus large que l'ecran, ils etirent la zone de defilement et le telephone
+     se met a defiler horizontalement sur du vide. */
+  position: relative;
 }

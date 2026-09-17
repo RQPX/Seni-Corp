@@ -115,7 +115,7 @@ export default function PaiementsPage() {
         <div className="lg:col-span-2 rounded-2xl" style={{ backgroundColor: C.white, border: `1px solid ${C.border}`, padding: "24px" }}>
           <h2 style={{ fontFamily: "var(--font-heading)", fontSize: "15px", fontWeight: 700, color: C.anthracite, marginBottom: "4px" }}>Recharger le compte</h2>
           <p style={{ fontSize: "12px", color: C.taupeLight, marginBottom: "16px" }}>
-            Paiement securise via <strong style={{ color: C.anthracite }}>CinetPay</strong> — accepte Wave, Orange Money et carte bancaire.
+            Paiement securise via <strong style={{ color: C.anthracite }}>CinetPay</strong>. Wave, Orange Money et carte bancaire sont acceptes.
           </p>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
@@ -215,7 +215,7 @@ export default function PaiementsPage() {
         {(transactions?.pages ?? 1) > 1 && (
           <div className="flex items-center justify-between px-4 py-3" style={{ borderTop: `1px solid ${C.border}` }}>
             <span style={{ fontSize: "12px", color: C.taupe }}>
-              Page {transactions!.page} / {transactions!.pages} — {transactions!.total} transactions
+              Page {transactions!.page} sur {transactions!.pages}, {transactions!.total} transactions au total
             </span>
             <div className="flex items-center gap-2">
               <button

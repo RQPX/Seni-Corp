@@ -330,8 +330,8 @@ export default function ParametresPage() {
 
             <p style={{ fontSize: "11.5px", color: C.taupeLight, lineHeight: 1.6 }}>
               12 caracteres minimum, avec au moins 3 types de caracteres (minuscule,
-              majuscule, chiffre, symbole) — ou 16 caracteres et plus. Changer le mot
-              de passe deconnecte toutes tes autres sessions.
+              majuscule, chiffre, symbole). Un mot de passe de 16 caracteres ou plus est
+              aussi accepte. Changer le mot de passe deconnecte toutes tes autres sessions.
             </p>
 
             <Erreur messages={pwdErreurs} />

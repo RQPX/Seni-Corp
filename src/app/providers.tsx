@@ -17,8 +17,14 @@ export function Providers({ children }: { children: ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 30_000,
-            refetchOnWindowFocus: false,
+            // Court, parce que la base peut bouger sans passer par l'interface
+            // (un colis supprime en SQL, un statut change par un agent).
+            staleTime: 10_000,
+            // Revenir sur l'onglet relit les donnees : sans ca, un changement
+            // fait ailleurs reste invisible tant qu'on ne recharge pas la page.
+            refetchOnWindowFocus: true,
+            refetchOnMount: true,
+            refetchOnReconnect: true,
             // Inutile de reessayer une erreur metier : seules les pannes
             // reseau et les 5xx valent une seconde tentative.
             retry: (nbEchecs, erreur) => {

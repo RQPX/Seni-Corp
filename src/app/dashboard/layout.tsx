@@ -18,7 +18,7 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
-import { logout as apiLogout } from "@/lib/api";
+import { logout as apiLogout, type UserInfo } from "@/lib/api";
 import { useProfil, useUtilisateur } from "@/lib/queries";
 import { C } from "@/lib/tokens";
 
@@ -37,6 +37,15 @@ const NAV_ITEMS = [
 // -- Initiales affichees dans l'avatar --
 function initiales(prenom?: string, nom?: string): string {
   return `${prenom?.[0] ?? ""}${nom?.[0] ?? ""}`.toUpperCase() || "--";
+}
+
+// -- Message d'accueil --
+// Un administrateur est salue par sa fonction et non par son prenom : le compte
+// est partage et la page affiche les colis de tout le monde, pas les siens.
+function salutation(user?: UserInfo | null): string {
+  if (!user) return "Bonjour";
+  if (user.role === "ADMIN") return "Bonjour Admin";
+  return `Bonjour ${user.prenom}`;
 }
 
 
@@ -86,14 +95,15 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
       {/* Desktop : position relative, toujours affichee (md:translate-x-0) */}
       <nav
         aria-label="Navigation principale"
-        className={`fixed top-0 left-0 z-50 h-full flex flex-col transition-transform duration-300 ease-out md:relative md:translate-x-0 md:z-auto ${
+        className={`fixed top-0 left-0 z-50 flex flex-col transition-transform duration-300 ease-out md:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
         style={{
           width: "256px",
           backgroundColor: C.emerald,
-          // maxHeight avec dvh pour eviter les debordements sur iOS Safari
-          maxHeight: "100dvh",
+          // La sidebar reste fixe sur toute la hauteur de la fenetre : c'est la
+          // page qui defile, pas une zone interieure.
+          height: "100dvh",
           // La sidebar est en position fixed : elle ignore le padding du body
           // (retire en C3), donc gere elle-meme l'encoche du haut sur iPhone
           paddingTop: "env(safe-area-inset-top)",
@@ -271,7 +281,7 @@ function TopBar({ onMenuOpen }: { onMenuOpen: () => void }) {
 
   return (
     <header
-      className="relative shrink-0"
+      className="sticky top-0 z-30 shrink-0"
       style={{ backgroundColor: C.white, borderBottom: `1px solid ${C.border}` }}
     >
       <div className="flex items-center justify-between px-4 py-3 md:px-8 md:py-4 gap-2">
@@ -287,7 +297,7 @@ function TopBar({ onMenuOpen }: { onMenuOpen: () => void }) {
           </button>
           <div className="min-w-0">
             <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "18px", fontWeight: 600, color: C.anthracite, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textTransform: "uppercase" }}>
-              {user ? `Bonjour ${user.prenom}` : "Bonjour"}
+              {salutation(user)}
             </h1>
             <p style={{ fontSize: "12px", color: C.taupe, marginTop: "2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               {new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
@@ -585,49 +595,39 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   }, [sidebarOpen]);
 
   return (
+    // C'est la page entiere qui defile, avec la barre du navigateur.
+    // L'ancien montage enfermait le contenu dans une zone a defilement propre :
+    // ca dessinait un cadre autour de chaque page et faisait apparaitre une
+    // seconde barre de defilement a l'interieur de la premiere.
     <div
-      className="flex overflow-hidden"
+      className="flex"
       style={{
-        // dvh = dynamic viewport height, s'adapte aux barres iOS
-        height: "100dvh",
-        maxHeight: "100dvh",
-        // -- FIX RESPONSIVE PRINCIPAL --
-        // Force le layout a ne jamais depasser la largeur de l'ecran
+        minHeight: "100dvh",
         maxWidth: "100%",
         width: "100%",
         overflowX: "hidden",
         backgroundColor: C.ivory,
       }}
     >
-      {/* Barre laterale (fixe a gauche sur desktop, glissante sur mobile) */}
+      {/* Barre laterale : fixe a gauche sur desktop, glissante sur mobile */}
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      {/* Zone principale : topbar + contenu */}
+      {/* Zone principale. La marge compense la sidebar, qui est hors du flux. */}
       <div
-        className="flex-1 flex flex-col overflow-hidden"
+        className="flex-1 flex flex-col md:ml-64"
         style={{
-          // -- IMPORTANT : min-width: 0 permet a flex-1 de "shrinker" correctement --
-          // Sans ca, un enfant trop large pousse tout le conteneur
+          // min-width: 0 permet a flex-1 de se retrecir : sans ca, un enfant
+          // trop large pousse tout le conteneur
           minWidth: 0,
           maxWidth: "100%",
         }}
       >
         <TopBar onMenuOpen={() => setSidebarOpen(true)} />
 
-        {/* -- Zone de contenu (les pages du dashboard) -- */}
-        {/* overflow-y-auto = scroll vertical seulement */}
-        {/* overflow-x-hidden = pas de scroll horizontal (le contenu s'y adapte) */}
-        {/* pb-[60px] sur mobile pour laisser de la place a la BottomNav */}
+        {/* pb sur mobile pour laisser la place a la BottomNav fixe */}
         <main
           className="flex-1 pb-[calc(60px+env(safe-area-inset-bottom))] md:pb-0"
-          style={{
-            overflowY: "auto",
-            overflowX: "hidden",
-            overscrollBehavior: "none",
-            WebkitOverflowScrolling: "touch",
-            maxWidth: "100%",
-            minWidth: 0,
-          }}
+          style={{ maxWidth: "100%", minWidth: 0 }}
         >
           {children}
         </main>

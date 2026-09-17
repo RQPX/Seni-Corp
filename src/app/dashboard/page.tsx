@@ -7,37 +7,21 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import {
-  ArrowUpRight, CheckCircle2, MapPin, Truck, Clock,
-  ChevronRight, AlertTriangle, XCircle, RotateCcw, Package
-} from "lucide-react";
+import { ArrowUpRight, ChevronRight } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid
 } from "recharts";
 import { FilterTabs } from "@/components/ui/FilterTabs";
-import { statutConfig, type StatutColis } from "@/lib/statuts";
+import { ColisDetailPanel, StatutBadge } from "@/components/ColisDetailPanel";
+import { type StatutColis } from "@/lib/statuts";
 import { formatDateFr } from "@/lib/utils";
 import { useColis, useProfil, useTransactions } from "@/lib/queries";
+import type { Colis } from "@/lib/api";
 import { C } from "@/lib/tokens";
 
 // Mois en francais pour le graphique
 const MOIS = ["jan","fev","mar","avr","mai","jun","jul","aou","sep","oct","nov","dec"];
-
-// Icone de chaque statut (couleurs et libelle lus depuis statutConfig)
-const STATUT_ICONS: Record<string, typeof Clock> = {
-  CREE:               Clock,
-  PRIS_EN_CHARGE:     Package,
-  EN_TRANSIT:         Truck,
-  ARRIVE_HUB:         MapPin,
-  EN_ATTENTE_RETRAIT: MapPin,
-  EN_LIVRAISON:       Truck,
-  LIVRE:              CheckCircle2,
-  RETOURNE:           RotateCcw,
-  PERDU:              XCircle,
-  INCIDENT:           AlertTriangle,
-  ANNULE:             XCircle,
-};
 
 // Options du filtre affichees en haut du tableau
 const FILTER_OPTIONS = [
@@ -50,29 +34,6 @@ const FILTER_OPTIONS = [
 
 // Nombre de colis charges pour alimenter le graphique et l'activite recente
 const TAILLE_APERCU = 50;
-
-// -- Petit badge colore selon le statut --
-function StatusBadge({ statut }: { statut: string }) {
-  const config = statutConfig(statut);
-  const Icon = STATUT_ICONS[statut];
-  return (
-    <span
-      className="inline-flex items-center gap-1.5 rounded-full"
-      style={{
-        backgroundColor: config.bg,
-        color: config.color,
-        padding: "4px 10px",
-        fontFamily: "var(--font-heading)",
-        fontSize: "10px",
-        fontWeight: 600,
-        whiteSpace: "nowrap",
-      }}
-    >
-      {Icon && <Icon size={11} strokeWidth={2} />}
-      {config.label}
-    </span>
-  );
-}
 
 // -- Info-bulle personnalisee du graphique --
 function ChartTooltip({ active, payload, label }: any) {
@@ -160,6 +121,7 @@ function KpiCard({ label, value, unit, trendLabel, featured = false }: {
 // ============================================================
 export default function DashboardPage() {
   const [activeFilter, setActiveFilter] = useState("");
+  const [selectedColis, setSelectedColis] = useState<Colis | null>(null);
 
   // Profil et solde (le solde n'est jamais calcule ici)
   const { data: profil } = useProfil();
@@ -213,7 +175,7 @@ export default function DashboardPage() {
       ...(apercu?.elements ?? []).slice(0, 5).map((c) => ({
         key: `colis-${c.id}`,
         tracking: c.tracking,
-        action: `cree — ${c.origine.ville} vers ${c.destination.ville}`,
+        action: `cree, de ${c.origine.ville} vers ${c.destination.ville}`,
         iso: c.createdAt,
         dotColor: C.emerald,
       })),
@@ -393,8 +355,11 @@ export default function DashboardPage() {
                 ) : recents!.elements.map((item, idx) => (
                   <tr
                     key={item.id}
-                    className="transition-colors duration-150"
+                    onClick={() => setSelectedColis(item)}
+                    className="transition-colors duration-150 cursor-pointer"
                     style={{ borderBottom: `1px solid ${C.border}`, backgroundColor: idx % 2 === 0 ? "transparent" : C.ivory }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = C.sage)}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = idx % 2 === 0 ? "transparent" : C.ivory)}
                   >
                     <td style={{ padding: "14px 20px" }}>
                       <span style={{ fontFamily: "var(--font-mono)", fontSize: "12px", fontWeight: 600, color: C.emerald }}>
@@ -408,14 +373,25 @@ export default function DashboardPage() {
                     </td>
                     <td style={{ padding: "14px 20px", fontSize: "13px", color: C.taupe }}>{item.destinataireNom}</td>
                     <td style={{ padding: "14px 20px" }}>
-                      <StatusBadge statut={item.statut} />
+                      <StatutBadge statut={item.statut} />
                     </td>
                     <td style={{ padding: "14px 20px", fontFamily: "var(--font-heading)", fontSize: "13px", fontWeight: 600, color: C.anthracite }}>
                       {item.montant.toLocaleString("fr")}
                       <span style={{ color: C.taupe, fontSize: "11px", fontWeight: 400 }}> XOF</span>
                     </td>
                     <td style={{ padding: "14px 12px" }}>
-                      <ChevronRight size={16} style={{ color: C.taupeLight }} />
+                      <button
+                        type="button"
+                        aria-label={`Ouvrir le detail de ${item.tracking}`}
+                        onClick={(e) => { e.stopPropagation(); setSelectedColis(item); }}
+                        className="flex items-center justify-center rounded-lg"
+                        style={{
+                          background: "none", border: "none", color: C.taupeLight,
+                          cursor: "pointer", minWidth: "32px", minHeight: "32px",
+                        }}
+                      >
+                        <ChevronRight size={16} />
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -428,6 +404,11 @@ export default function DashboardPage() {
           </div>
         </div>
       </section>
+
+      {/* Fiche detaillee, identique a celle de la page "Mes colis" */}
+      {selectedColis && (
+        <ColisDetailPanel colis={selectedColis} onClose={() => setSelectedColis(null)} />
+      )}
 
       <div className="h-8" />
     </div>

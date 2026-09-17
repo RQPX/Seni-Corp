@@ -38,9 +38,10 @@ export default function FacturesPage() {
           Bientot disponible
         </h2>
         <p style={{ fontSize: "13px", color: C.taupe, lineHeight: 1.7, maxWidth: "460px", margin: "0 auto 24px" }}>
-          La facturation mensuelle consolidee est en cours de mise en place. En attendant,
-          le detail de tous tes mouvements — envois debites, recharges, remboursements —
-          est disponible dans l&apos;historique des transactions.
+          La facturation mensuelle consolidee est en cours de mise en place.
+          En attendant, tu retrouves le detail de tous tes mouvements dans
+          l&apos;historique des transactions. Les envois debites, les recharges
+          et les remboursements y figurent tous.
         </p>
 
         <Link

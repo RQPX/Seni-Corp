@@ -682,7 +682,10 @@ export default function NouveauColisPage() {
                     Colis enregistre
                   </div>
                   <div style={{ fontSize: "13px", color: C.taupe }}>
-                    {colisCree.montant.toLocaleString("fr")} XOF — {LABELS_PAIEMENT[colisCree.modePaiement]}
+                    {colisCree.montant.toLocaleString("fr")} XOF
+                  </div>
+                  <div style={{ fontSize: "12px", color: C.taupeLight, marginTop: "2px" }}>
+                    {LABELS_PAIEMENT[colisCree.modePaiement]}
                   </div>
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: "18px", fontWeight: 700, color: C.emerald, margin: "14px 0" }}>
                     {colisCree.tracking}
@@ -763,7 +766,7 @@ export default function NouveauColisPage() {
                   </div>
                 </div>
                 <p style={{ fontSize: "13px", color: C.taupe, marginBottom: "16px", lineHeight: 1.6 }}>
-                  {origine?.ville} vers {destination?.ville} — {nomDest}
+                  {origine?.ville} vers {destination?.ville}, pour {nomDest}
                 </p>
 
                 {/* Erreur renvoyee par le serveur (solde insuffisant, validation...) */}
