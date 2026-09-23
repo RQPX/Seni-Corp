@@ -130,8 +130,10 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
         </div>
 
         {/* -- Liste des liens du menu -- */}
-        {/* overflow-y-auto : scrollable si la liste depasse en hauteur */}
-        <div className="flex-1 overflow-y-auto px-3 py-4">
+        {/* La liste reste defilable quand la fenetre est courte, mais sans
+            barre visible : une barre claire sur le fond vert, juste a cote de
+            celle de la page, donnait deux barres cote a cote. */}
+        <div className="flex-1 overflow-y-auto scrollbar-hide px-3 py-4">
           {NAV_ITEMS.map((item) => {
             const showSection = item.section !== lastSection;
             if (showSection) lastSection = item.section;
