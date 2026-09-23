@@ -9,7 +9,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ChevronDown } from "lucide-react";
 import { C } from "@/lib/tokens";
 
 // -- Structure d'une option de filtre --
@@ -55,9 +54,6 @@ export function FilterTabs({ options, value, onChange, ariaLabel = "Filtrer" }: 
     return () => mq.removeEventListener("change", handler);
   }, []);
 
-  // Trouver le libelle de la valeur active (pour le select mobile)
-  const activeOption = options.find((o) => o.value === value);
-
   // =========================================================
   // VERSION MOBILE : menu deroulant natif du systeme
   // =========================================================
@@ -97,15 +93,9 @@ export function FilterTabs({ options, value, onChange, ariaLabel = "Filtrer" }: 
             </option>
           ))}
         </select>
-
-        {/* Chevron dessine en SVG, positionne a droite */}
-        <ChevronDown
-          size={18}
-          strokeWidth={2}
-          className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2"
-          style={{ color: C.taupe }}
-          aria-hidden="true"
-        />
+        {/* Pas de chevron ici : la regle globale `select` de globals.css en
+            dessine deja un en background-image. En ajouter un second le faisait
+            chevaucher le premier, ce qui donnait un "w" au lieu d'un "v". */}
       </div>
     );
   }

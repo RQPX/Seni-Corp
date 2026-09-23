@@ -271,12 +271,15 @@ function TopBar({ onMenuOpen }: { onMenuOpen: () => void }) {
   }, [searchOpen]);
 
   // -- Envoi de la recherche : redirige vers la liste des colis filtree --
+  // Sur un champ vide, le bouton doit quand meme refermer la barre : sinon il
+  // semble casse, on appuie sur OK et rien ne bouge.
   const handleSearch = () => {
-    if (searchQuery.trim()) {
-      router.push(`/dashboard/colis?q=${encodeURIComponent(searchQuery.trim())}`);
-      setSearchOpen(false);
-      setSearchQuery("");
+    const terme = searchQuery.trim();
+    if (terme) {
+      router.push(`/dashboard/colis?q=${encodeURIComponent(terme)}`);
     }
+    setSearchOpen(false);
+    setSearchQuery("");
   };
 
   return (
@@ -364,7 +367,11 @@ function TopBar({ onMenuOpen }: { onMenuOpen: () => void }) {
       {searchOpen && (
         <div className="px-4 pb-3 md:px-8" style={{ backgroundColor: C.white }}>
           <div className="flex gap-2">
-            <div className="relative flex-1">
+            {/* minWidth 0 est indispensable : un <input> a une largeur
+                intrinseque d'environ 20 caracteres, et sans ca flex-1 refuse
+                de descendre en dessous. Sur telephone, le champ poussait le
+                bouton OK hors de l'ecran. */}
+            <div className="relative flex-1" style={{ minWidth: 0 }}>
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: C.taupeLight }} />
               <input
                 ref={searchRef}
