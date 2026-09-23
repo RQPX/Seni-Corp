@@ -272,6 +272,20 @@ function TopBar({ onMenuOpen }: { onMenuOpen: () => void }) {
     if (searchOpen && searchRef.current) searchRef.current.focus();
   }, [searchOpen]);
 
+  // -- Date du jour, calculee seulement dans le navigateur --
+  // Le serveur tourne en UTC. S'il rend la date pendant le rendu serveur, un
+  // visiteur dans un autre fuseau obtient une date differente, React constate
+  // l'ecart et rejette tout le rendu recu ("Hydration failed"). On attend donc
+  // le montage : la date depend du visiteur, pas du serveur.
+  const [dateDuJour, setDateDuJour] = useState("");
+  useEffect(() => {
+    setDateDuJour(
+      new Date().toLocaleDateString("fr-FR", {
+        weekday: "long", day: "numeric", month: "long", year: "numeric",
+      })
+    );
+  }, []);
+
   // -- Envoi de la recherche : redirige vers la liste des colis filtree --
   // Sur un champ vide, le bouton doit quand meme refermer la barre : sinon il
   // semble casse, on appuie sur OK et rien ne bouge.
@@ -304,8 +318,10 @@ function TopBar({ onMenuOpen }: { onMenuOpen: () => void }) {
             <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "18px", fontWeight: 600, color: C.anthracite, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textTransform: "uppercase" }}>
               {salutation(user)}
             </h1>
+            {/* Espace insecable tant que la date n'est pas calculee : garde la
+                hauteur de la ligne et evite que le titre sautille. */}
             <p style={{ fontSize: "12px", color: C.taupe, marginTop: "2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              {new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+              {dateDuJour || " "}
             </p>
           </div>
         </div>
