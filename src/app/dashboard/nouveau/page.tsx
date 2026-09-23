@@ -24,6 +24,7 @@ import {
 } from "@/lib/api";
 import { LABELS_PAIEMENT, type ModePaiement, type TypeService } from "@/lib/statuts";
 import { usePointsRelais, useProfil, cles } from "@/lib/queries";
+import { SelectRelais } from "@/components/ui/SelectRelais";
 import { C } from "@/lib/tokens";
 
 // Les 4 etapes du formulaire
@@ -60,47 +61,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       </label>
       {children}
     </div>
-  );
-}
-
-// -- Select de point relais, groupe par ville --
-function SelectRelais({ relais, value, onChange, exclureId, placeholder, ariaLabel }: {
-  relais: PointRelais[];
-  value: number | null;
-  onChange: (id: number | null) => void;
-  exclureId?: number | null;
-  placeholder: string;
-  ariaLabel: string;
-}) {
-  // Regroupe par ville pour que la liste reste lisible quand les relais se multiplient
-  const parVille = useMemo(() => {
-    const map = new Map<string, PointRelais[]>();
-    relais
-      .filter((r) => r.id !== exclureId)
-      .forEach((r) => {
-        const liste = map.get(r.ville) ?? [];
-        liste.push(r);
-        map.set(r.ville, liste);
-      });
-    return [...map.entries()].sort(([a], [b]) => a.localeCompare(b, "fr"));
-  }, [relais, exclureId]);
-
-  return (
-    <select
-      value={value ?? ""}
-      onChange={(e) => onChange(e.target.value ? Number(e.target.value) : null)}
-      style={inputStyle}
-      aria-label={ariaLabel}
-    >
-      <option value="">{placeholder}</option>
-      {parVille.map(([ville, liste]) => (
-        <optgroup key={ville} label={ville}>
-          {liste.map((r) => (
-            <option key={r.id} value={r.id}>{r.nom}</option>
-          ))}
-        </optgroup>
-      ))}
-    </select>
   );
 }
 
