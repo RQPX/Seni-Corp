@@ -89,6 +89,12 @@ export default function PaiementsPage() {
 
   const erreurRecharge = recharge.error instanceof ApiError ? recharge.error.message : "";
 
+  // Le compte prepaye sert aux professionnels qui expedient en volume : une
+  // seule recharge au lieu d'une commission CinetPay par colis. Un particulier
+  // paie chaque envoi a l'unite, la recharge ne lui apporte rien. Le solde
+  // reste affiche pour tous, car un remboursement y atterrit.
+  const peutRecharger = profil?.typeClient === "ENTREPRISE";
+
   return (
     <div className="px-4 py-5 md:px-8 md:py-7 max-w-[1400px] mx-auto">
       <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "22px", fontWeight: 700, color: C.anthracite, marginBottom: "24px" }}>Paiements</h1>
@@ -96,7 +102,7 @@ export default function PaiementsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-7">
 
         {/* Carte solde */}
-        <div className="relative overflow-hidden rounded-2xl" style={{ backgroundColor: C.emerald, padding: "28px" }}>
+        <div className={`relative overflow-hidden rounded-2xl ${peutRecharger ? "" : "lg:col-span-3"}`} style={{ backgroundColor: C.emerald, padding: "28px" }}>
           <div className="absolute" style={{ top: "-30px", right: "-30px", width: "120px", height: "120px", background: `radial-gradient(circle, ${C.bronze} 0%, transparent 70%)`, opacity: 0.35 }} />
           <div className="flex items-center gap-2 mb-4">
             <Wallet size={18} style={{ color: C.bronzeLight }} />
@@ -108,7 +114,8 @@ export default function PaiementsPage() {
           </div>
         </div>
 
-        {/* Bloc recharge */}
+        {/* Bloc recharge, reserve aux comptes entreprise */}
+        {peutRecharger && (
         <div className="lg:col-span-2 rounded-2xl" style={{ backgroundColor: C.white, border: `1px solid ${C.border}`, padding: "24px" }}>
           <h2 style={{ fontFamily: "var(--font-heading)", fontSize: "15px", fontWeight: 700, color: C.anthracite, marginBottom: "4px" }}>Recharger le compte</h2>
           <p style={{ fontSize: "12px", color: C.taupeLight, marginBottom: "16px" }}>
@@ -155,6 +162,7 @@ export default function PaiementsPage() {
             ))}
           </div>
         </div>
+        )}
       </div>
 
       {/* Historique des transactions */}

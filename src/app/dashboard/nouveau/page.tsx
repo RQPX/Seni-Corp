@@ -23,7 +23,7 @@ import {
   type ColisCree, type PointRelais,
 } from "@/lib/api";
 import { LABELS_PAIEMENT, type ModePaiement, type TypeService } from "@/lib/statuts";
-import { usePointsRelais, useProfil, cles } from "@/lib/queries";
+import { usePointsRelais, useProfil, useUtilisateur, cles } from "@/lib/queries";
 import { SelectRelais } from "@/components/ui/SelectRelais";
 import { C } from "@/lib/tokens";
 
@@ -70,6 +70,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 // ============================================================
 export default function NouveauColisPage() {
   const queryClient = useQueryClient();
+  const { data: user } = useUtilisateur();
   const { data: profil } = useProfil();
   const { data: relais, isPending: relaisPending, isError: relaisError } = usePointsRelais();
 
@@ -89,6 +90,16 @@ export default function NouveauColisPage() {
   const [codeCopie, setCodeCopie] = useState(false);
 
   const solde = profil?.soldeCompte ?? 0;
+
+  // Seul un compte CLIENT possede un dossier auquel rattacher un colis. Le
+  // backend refuse la creation aux autres roles, et il a raison : un admin n'a
+  // pas de clientId. Autant le dire avant les quatre etapes plutot qu'au
+  // dernier clic.
+  const peutCreer = !user || user.role === "CLIENT";
+
+  // Le solde ne sert qu'aux comptes qui peuvent le recharger. Un particulier
+  // ne le voit que s'il a recu un remboursement.
+  const soldeUtilisable = profil?.typeClient === "ENTREPRISE" || solde > 0;
 
   const origine = relais?.find((r) => r.id === origineId) ?? null;
   const destination = relais?.find((r) => r.id === destinationId) ?? null;
@@ -205,10 +216,48 @@ export default function NouveauColisPage() {
   // -- Moyens de paiement --
   // CinetPay agrege Wave + Orange Money + Carte bancaire
   const PAYMENT_METHODS: { id: ModePaiement; label: string; desc: string }[] = [
-    { id: "SOLDE",    label: LABELS_PAIEMENT.SOLDE,    desc: `Debiter du solde (${solde.toLocaleString("fr")} XOF)` },
+    ...(soldeUtilisable
+      ? [{ id: "SOLDE" as const, label: LABELS_PAIEMENT.SOLDE, desc: `Debiter du solde (${solde.toLocaleString("fr")} XOF)` }]
+      : []),
     { id: "CINETPAY", label: LABELS_PAIEMENT.CINETPAY, desc: "Wave, Orange Money ou carte bancaire" },
     { id: "COD",      label: LABELS_PAIEMENT.COD,      desc: "Le destinataire paie au retrait" },
   ];
+
+  // Un compte qui n'est pas CLIENT n'a pas de dossier auquel rattacher un
+  // colis. On le dit d'emblee au lieu de laisser remplir le formulaire.
+  if (!peutCreer) {
+    return (
+      <div className="px-4 py-5 md:px-8 md:py-7 mx-auto" style={{ maxWidth: "1000px", width: "100%" }}>
+        <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "22px", fontWeight: 700, color: C.anthracite, marginBottom: "6px" }}>
+          Nouveau colis
+        </h1>
+        <p style={{ fontSize: "13px", color: C.taupe, marginBottom: "28px" }}>
+          Reserve aux comptes client.
+        </p>
+        <div
+          className="rounded-2xl text-center"
+          style={{ backgroundColor: C.white, border: `1px solid ${C.border}`, padding: "48px 24px" }}
+        >
+          <div
+            className="flex items-center justify-center rounded-2xl mx-auto"
+            style={{ width: "56px", height: "56px", backgroundColor: C.bronzeSoft, color: C.bronze, marginBottom: "18px" }}
+          >
+            <Package size={26} />
+          </div>
+          <h2 style={{ fontFamily: "var(--font-heading)", fontSize: "18px", fontWeight: 700, color: C.anthracite, marginBottom: "8px" }}>
+            Creation reservee aux comptes client
+          </h2>
+          <p style={{ fontSize: "13px", color: C.taupe, lineHeight: 1.7, maxWidth: "460px", margin: "0 auto" }}>
+            Un colis est toujours rattache au compte client qui l&apos;envoie et qui le paie.
+            Ton compte sert a superviser l&apos;activite, il n&apos;a pas de dossier client
+            auquel rattacher un envoi. Pour creer un colis, connecte-toi avec le compte
+            client concerne.
+          </p>
+        </div>
+        <div className="h-8" />
+      </div>
+    );
+  }
 
   return (
     <div

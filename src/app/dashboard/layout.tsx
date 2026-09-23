@@ -39,6 +39,13 @@ function initiales(prenom?: string, nom?: string): string {
   return `${prenom?.[0] ?? ""}${nom?.[0] ?? ""}`.toUpperCase() || "--";
 }
 
+// -- Qui peut creer un colis --
+// Un colis est rattache au compte client qui l'envoie. Les autres roles n'ont
+// pas de clientId : le backend refuse la creation, autant ne pas la proposer.
+function peutCreerColis(user?: UserInfo | null): boolean {
+  return !user || user.role === "CLIENT";
+}
+
 // -- Message d'accueil --
 // Un administrateur est salue par sa fonction et non par son prenom : le compte
 // est partage et la page affiche les colis de tout le monde, pas les siens.
@@ -134,7 +141,7 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
             barre visible : une barre claire sur le fond vert, juste a cote de
             celle de la page, donnait deux barres cote a cote. */}
         <div className="flex-1 overflow-y-auto scrollbar-hide px-3 py-4">
-          {NAV_ITEMS.map((item) => {
+          {NAV_ITEMS.filter((i) => i.href !== "/dashboard/nouveau" || peutCreerColis(user)).map((item) => {
             const showSection = item.section !== lastSection;
             if (showSection) lastSection = item.section;
             const isActive = pathname === item.href;
@@ -364,6 +371,7 @@ function TopBar({ onMenuOpen }: { onMenuOpen: () => void }) {
           </div>
 
           {/* Bouton "Nouveau colis" (cache sur les tres petits ecrans) */}
+          {peutCreerColis(user) && (
           <Link
             href="/dashboard/nouveau"
             className="hidden sm:flex items-center gap-2 rounded-lg"
@@ -378,6 +386,7 @@ function TopBar({ onMenuOpen }: { onMenuOpen: () => void }) {
             <PlusCircle size={15} strokeWidth={2} />
             Nouveau colis
           </Link>
+          )}
         </div>
       </div>
 
@@ -504,13 +513,14 @@ function TopBar({ onMenuOpen }: { onMenuOpen: () => void }) {
 // ============================================================
 function BottomNav() {
   const pathname = usePathname();
+  const { data: user } = useUtilisateur();
   const items = [
     { href: "/dashboard",            label: "Accueil",   icon: LayoutDashboard },
     { href: "/dashboard/colis",      label: "Colis",     icon: Package },
     { href: "/dashboard/nouveau",    label: "Nouveau",   icon: PlusCircle },
     { href: "/dashboard/paiements",  label: "Paiements", icon: CreditCard },
     { href: "/dashboard/parametres", label: "Compte",    icon: Settings },
-  ];
+  ].filter((i) => i.href !== "/dashboard/nouveau" || peutCreerColis(user));
 
   return (
     <nav
