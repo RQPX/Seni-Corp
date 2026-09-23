@@ -106,9 +106,6 @@ export default function PaiementsPage() {
             {profil ? profil.soldeCompte.toLocaleString("fr") : "—"}
             <span style={{ fontSize: "16px", fontWeight: 500, color: C.bronzeLight, marginLeft: "8px" }}>XOF</span>
           </div>
-          <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.5)", marginTop: "8px" }}>
-            Le solde est tenu par le serveur, jamais par le navigateur.
-          </p>
         </div>
 
         {/* Bloc recharge */}
