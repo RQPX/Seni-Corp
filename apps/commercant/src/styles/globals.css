@@ -1,0 +1,359 @@
+/* ============================================================
+   SENI CORP — Styles globaux
+   Ce fichier definit :
+   - Les polices utilisees partout
+   - Les couleurs de la marque (variables reutilisables)
+   - Les regles pour que le site s'affiche bien sur mobile ET desktop
+   - L'accessibilite (focus visible, mouvement reduit, cible tactile)
+   ============================================================ */
+
+/* -- Polices Google Fonts (chargees en une seule requete) -- */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* -- Tailwind layers (base + composants + utilitaires) -- */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+/* ============================================================
+   Variables CSS — accessibles partout via var(--nom)
+   Utile pour les composants qui n'utilisent pas Tailwind
+   ============================================================ */
+:root {
+  /* Palette de couleurs SENI CORP */
+  --color-emerald:       #0B4D3F;
+  --color-emerald-dark:  #083528;
+  --color-emerald-light: #1A6B58;
+  --color-emerald-soft:  #E8F0ED;
+
+  --color-bronze:        #B8935A;
+  --color-bronze-light:  #D4B486;
+  --color-bronze-soft:   #F5EFE3;
+
+  --color-ivory:         #FAF6F0;
+  --color-sage:          #E8EDE5;
+  --color-sage-dark:     #D9E0D4;
+
+  --color-anthracite:    #1A1A1A;
+  --color-taupe:         #6B6259;
+  --color-taupe-light:   #9B8A7E;
+
+  --color-terra:         #C66D4F;
+  --color-terra-soft:    #FCEEE9;
+
+  --color-border:        #EAE3D5;
+  --color-border-strong: #D9D2C5;
+
+  --color-success:       #4A6B5C;
+  --color-warning:       #B88838;
+  --color-error:         #A04A3C;
+
+  /* Polices de la marque */
+  --font-heading: 'Manrope', sans-serif;
+  --font-body:    'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono:    'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Largeur de la sidebar (utilisee dans le layout dashboard) */
+  --sidebar-width: 256px;
+
+  /* Vitesses de transition partout coherentes */
+  --transition-fast:   150ms ease-out;
+  --transition-normal: 200ms ease-out;
+  --transition-slow:   300ms ease-out;
+
+  /* Hauteur de la barre du bas sur mobile (BottomNav) */
+  --bottom-nav-height: 60px;
+}
+
+
+/* ============================================================
+   RESET — remise a zero coherente pour tous les navigateurs
+   ============================================================ */
+
+/* Tous les elements calculent leur taille en incluant bordure + padding */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+
+/* ============================================================
+   REGLES ANTI-DEBORDEMENT MOBILE
+   C'est la cle du fix : sur mobile, on force la largeur maximum
+   pour que le contenu ne pousse jamais le viewport vers la droite
+   ============================================================ */
+
+html {
+  font-family: var(--font-body);
+  /* Pas de font-size en px sur html : on respecte le reglage du navigateur.
+     Les tailles de texte sont definies dans tailwind.config.ts (fontSize). */
+  line-height: 1.6;
+  color: var(--color-anthracite);
+  background-color: var(--color-ivory);
+
+  /* Ameliore le rendu des polices sur Mac / iOS */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* -- Anti-debordement horizontal -- */
+  /* clip et non hidden : hidden cree un conteneur de defilement et est peu
+     fiable sur iOS Safari (on peut encore pousser la page au doigt) */
+  overflow-x: clip;
+  max-width: 100%;         /* 100% et non 100vw : exclut la barre de defilement */
+  width: 100%;
+
+  /* Empeche le zoom involontaire sur iOS quand on tourne le telephone */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100vh;
+  /* dvh = dynamic viewport height, s'adapte a la barre d'URL mobile */
+  min-height: 100dvh;
+
+  /* -- Anti-debordement horizontal (double garantie) -- */
+  overflow-x: clip;
+  max-width: 100%;
+  width: 100%;
+
+  /* Empeche l'effet "bounce" sur iOS quand on tire la page */
+  overscroll-behavior: none;
+
+  /* Retire le delai de 300ms sans desactiver le zoom par double tap.
+     (le delai n'existe plus sur les navigateurs a jour avec un viewport correct) */
+  touch-action: pan-x pan-y pinch-zoom;
+
+  /* Pas de padding d'encoche ici : chaque barre fixe gere son propre
+     safe-area (voir dashboard/layout.tsx). Le body fait deja 100dvh ;
+     lui ajouter les marges d'encoche depassait la hauteur de l'ecran
+     et causait un double defilement vertical sur iOS. */
+}
+
+/* -- Regle importante pour les elements qui pourraient deborder -- */
+/* Les tables, les longs textes sans espace, les images sans max-width */
+img,
+video,
+svg,
+canvas,
+iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Les tables sont mises en scroll horizontal isole, pas au niveau du body */
+table {
+  max-width: 100%;
+}
+
+
+/* ============================================================
+   ACCESSIBILITE
+   ============================================================ */
+
+/* Anneau de focus visible quand on utilise le clavier (pas la souris) */
+:focus-visible {
+  outline: 2px solid var(--color-bronze);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Cache l'anneau quand on clique a la souris (moins genant visuellement) */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Texte lu par les lecteurs d'ecran mais invisible pour les voyants */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Respecte le reglage "reduire les animations" du systeme */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+
+/* ============================================================
+   FORMULAIRES — evite le zoom automatique sur iOS
+   iOS zoome quand un input a font-size < 16px lors du focus
+   On force 16px sur mobile, on garde 14px sur desktop
+   ============================================================ */
+
+/* Sur mobile uniquement : force la taille de police pour eviter le zoom */
+@media (max-width: 767px) {
+  input:not([type='checkbox']):not([type='radio']),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Les <select> natifs : meilleure apparence sur toutes plateformes */
+select {
+  /* On enleve l'apparence par defaut du navigateur */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  /* On ajoute notre propre chevron (fleche vers le bas) */
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B6259' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 12px;
+
+  /* Espace a droite pour ne pas superposer le texte et le chevron */
+  padding-right: 36px !important;
+}
+
+
+/* ============================================================
+   SCROLLBAR PERSONNALISEE — coherente avec la charte
+   ============================================================ */
+
+/* Chrome, Edge, Safari */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-ivory);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-taupe-light);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) var(--color-ivory);
+}
+
+
+/* ============================================================
+   TYPOGRAPHIE DE BASE
+   ============================================================ */
+
+/* Titres en Manrope (police heading) */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  color: var(--color-anthracite);
+  line-height: 1.25;
+  /* Coupe les mots trop longs au lieu de deborder */
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+
+h1 { font-size: 28px; }
+h2 { font-size: 22px; }
+h3 { font-size: 18px; }
+h4 { font-size: 15px; }
+
+/* Paragraphes avec espacement et coupe des mots longs */
+p {
+  margin-bottom: 0.75em;
+  line-height: 1.65;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+
+/* Liens */
+a {
+  color: var(--color-emerald);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--color-emerald-light);
+}
+
+/* Codes techniques : police monospace */
+code,
+.tracking-number {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  overflow-wrap: break-word;
+}
+
+
+/* ============================================================
+   CLASSES UTILITAIRES — reutilisables partout
+   ============================================================ */
+
+/* Carte standard : fond blanc, bordure douce, coins arrondis */
+.card {
+  background-color: white;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  transition: box-shadow var(--transition-normal);
+}
+
+/* Carte cliquable : ombre au survol */
+.card-interactive:hover {
+  box-shadow: 0 4px 12px rgba(11, 77, 63, 0.08);
+}
+
+/* Cible tactile minimum : 44x44 px (norme WCAG accessibilite) */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Cache la scrollbar mais garde le scroll actif (pour les filtres pilules) */
+.scrollbar-hide {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE, Edge */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
+}
+
+/* Empeche un container de "pousser" son parent horizontalement */
+.contain-x {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Pour les containers qui doivent scroller horizontalement (tables) */
+/* Isole le scroll : le parent n'est PAS pousse a droite */
+.scroll-x-contain {
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+
+  /* Sert de reference aux enfants en position absolue, par exemple les
+     libelles .sr-only des en-tetes de tableau. Sans ca, ces enfants se
+     positionnent par rapport a la page entiere : places au bout d'un tableau
+     plus large que l'ecran, ils etirent la zone de defilement et le telephone
+     se met a defiler horizontalement sur du vide. */
+  position: relative;
+}
