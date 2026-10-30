@@ -22,7 +22,11 @@ import {
 import { Bouton, Erreur, Chargement, Pastille, styleSaisie } from "@/components/ui";
 import { StatutBadge } from "@/components/StatutBadge";
 import { formatPoids, formatDateFr } from "@/lib/utils";
+import { ApiError } from "@/lib/api";
 import { C } from "@/lib/tokens";
+
+/** Limite imposee par le backend sur la note de cloture. */
+const NOTE_MAX = 300;
 
 /** Seuls ces statuts sont embarquables, d'apres la regle du backend. */
 const EMBARQUABLES: StatutColis[] = ["PRIS_EN_CHARGE", "ARRIVE_HUB"];
@@ -143,10 +147,12 @@ export function TourneePanel({ tourneeId, fermer }: { tourneeId: number | null; 
 
   const [ajout, setAjout] = useState(false);
   const [refuses, setRefuses] = useState<string[]>([]);
+  const [note, setNote] = useState("");
 
   useEffect(() => {
     setAjout(false);
     setRefuses([]);
+    setNote("");
     demarrer.reset();
     terminer.reset();
     annuler.reset();
@@ -173,6 +179,13 @@ export function TourneePanel({ tourneeId, fermer }: { tourneeId: number | null; 
       { id: tourneeId },
       { onSuccess: (resultat) => setRefuses(resultat.colisRefuses) },
     );
+
+  const cloturer = () =>
+    terminer.mutate({ id: tourneeId, note: note.trim() || undefined });
+
+  // Une tournee hors de la portee du compte repond 404, comme si elle
+  // n'existait pas. On le dit clairement plutot que d'afficher un echec.
+  const introuvable = error instanceof ApiError && error.status === 404;
 
   return (
     <>
@@ -216,7 +229,13 @@ export function TourneePanel({ tourneeId, fermer }: { tourneeId: number | null; 
 
         <div className="flex-1 overflow-y-auto" style={{ padding: "20px" }}>
           {isLoading && <Chargement texte="Chargement de la tournee" />}
-          <Erreur erreur={error} repli="Le detail de la tournee n'a pas pu etre charge." />
+          {introuvable ? (
+            <p style={{ fontSize: "13px", color: C.taupe, lineHeight: 1.6 }}>
+              Cette tournee n&apos;existe pas, ou elle ne passe pas par ton agence.
+            </p>
+          ) : (
+            <Erreur erreur={error} repli="Le detail de la tournee n'a pas pu etre charge." />
+          )}
 
           {tournee && (
             <div className="space-y-6">
@@ -361,6 +380,37 @@ export function TourneePanel({ tourneeId, fermer }: { tourneeId: number | null; 
                   </div>
                 )}
 
+                {tournee.noteCloture && (
+                  <div className="rounded-lg mb-3" style={{ backgroundColor: C.ivory, border: `1px solid ${C.border}`, padding: "12px" }}>
+                    <div style={{ fontSize: "11px", fontWeight: 600, color: C.taupe, marginBottom: "4px" }}>
+                      Note de cloture
+                    </div>
+                    <p style={{ fontSize: "13px", color: C.anthracite, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+                      {tournee.noteCloture}
+                    </p>
+                  </div>
+                )}
+
+                {enCours && roule && (
+                  <div className="mb-3">
+                    <label htmlFor="note-cloture" style={{ display: "block", fontSize: "12px", fontWeight: 600, color: C.anthracite, marginBottom: "6px" }}>
+                      Note de cloture <span style={{ fontWeight: 400, color: C.taupe }}>(facultative)</span>
+                    </label>
+                    <textarea
+                      id="note-cloture"
+                      value={note}
+                      onChange={(e) => setNote(e.target.value)}
+                      maxLength={NOTE_MAX}
+                      rows={3}
+                      placeholder="Exemple : panne a Yamoussoukro, 3 colis reportes"
+                      style={{ ...styleSaisie, width: "100%", resize: "vertical", minHeight: "72px" }}
+                    />
+                    <div style={{ fontSize: "11px", color: C.taupeLight, textAlign: "right", marginTop: "2px" }}>
+                      {note.length} / {NOTE_MAX}
+                    </div>
+                  </div>
+                )}
+
                 <Erreur erreur={demarrer.error || terminer.error || annuler.error} />
 
                 <div className="flex flex-wrap gap-2 mt-3">
@@ -370,7 +420,7 @@ export function TourneePanel({ tourneeId, fermer }: { tourneeId: number | null; 
                     </Bouton>
                   )}
                   {enCours && roule && (
-                    <Bouton onClick={() => terminer.mutate({ id: tournee.id })} disabled={terminer.isPending}>
+                    <Bouton onClick={cloturer} disabled={terminer.isPending}>
                       <Flag size={14} /> {terminer.isPending ? "Cloture" : "Terminer"}
                     </Bouton>
                   )}
