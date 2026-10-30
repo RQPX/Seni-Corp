@@ -664,6 +664,8 @@ export interface Tournee {
   statut: StatutTournee;
   departReel: string | null;
   arriveeReelle: string | null;
+  /** Saisie a la cloture. null si aucune note, ou tournee terminee avant le 30/10/2026. */
+  noteCloture: string | null;
   ligne: Ligne;
   camion: Pick<Camion, 'id' | 'immatriculation' | 'marque' | 'modele' | 'capaciteKg'>;
   chauffeur: { id: number; user: { id: number; nom: string; prenom: string; telephone: string } };
@@ -679,6 +681,7 @@ export interface TourneeResume {
   reference: string;
   datePrevue: string;
   statut: StatutTournee;
+  noteCloture: string | null;
   ligne: Ligne;
   camion: { id: number; immatriculation: string };
   chauffeur: { id: number; user: { id: number; nom: string; prenom: string } };
