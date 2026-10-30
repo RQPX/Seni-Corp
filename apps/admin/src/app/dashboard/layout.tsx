@@ -102,10 +102,10 @@ function Sidebar({ ouvert, fermer }: { ouvert: boolean; fermer: () => void }) {
       >
         <div className="flex items-center justify-between px-5 pt-6 pb-2">
           <div>
-            <div style={{ fontFamily: "var(--font-heading)", fontSize: "20px", fontWeight: 800, letterSpacing: "3px", color: C.white }}>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: "20px", fontWeight: 800, letterSpacing: "3px", color: C.white }}>
               SENI CORP
             </div>
-            <div style={{ fontFamily: "var(--font-heading)", fontSize: "9px", letterSpacing: "2px", color: C.bronzeLight, textTransform: "uppercase", marginTop: "2px" }}>
+            <div style={{ fontFamily: "var(--font-body)", fontSize: "9px", letterSpacing: "2px", color: C.bronzeLight, textTransform: "uppercase", marginTop: "2px" }}>
               Exploitation
             </div>
           </div>
@@ -131,7 +131,7 @@ function Sidebar({ ouvert, fermer }: { ouvert: boolean; fermer: () => void }) {
             return (
               <div key={entree.href}>
                 {nouvelleSection && (
-                  <div style={{ fontFamily: "var(--font-heading)", fontSize: "9px", letterSpacing: "2px", textTransform: "uppercase", color: C.bronzeLight, opacity: 0.6, padding: "16px 12px 6px" }}>
+                  <div style={{ fontFamily: "var(--font-body)", fontSize: "9px", letterSpacing: "2px", textTransform: "uppercase", color: C.bronzeLight, opacity: 0.6, padding: "16px 12px 6px" }}>
                     {entree.section}
                   </div>
                 )}
@@ -165,7 +165,7 @@ function Sidebar({ ouvert, fermer }: { ouvert: boolean; fermer: () => void }) {
               style={{
                 width: "36px", height: "36px",
                 background: `linear-gradient(135deg, ${C.bronze}, ${C.bronzeLight})`,
-                fontFamily: "var(--font-heading)", fontSize: "13px", fontWeight: 700, color: C.emeraldDark,
+                fontFamily: "var(--font-body)", fontSize: "13px", fontWeight: 700, color: C.emeraldDark,
               }}
             >
               {initiales(user?.prenom, user?.nom)}
@@ -191,7 +191,7 @@ function Sidebar({ ouvert, fermer }: { ouvert: boolean; fermer: () => void }) {
       {confirmer && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center px-4" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} role="dialog" aria-modal="true">
           <div className="rounded-2xl" style={{ backgroundColor: C.white, padding: "28px", maxWidth: "380px", width: "100%" }}>
-            <h3 style={{ fontFamily: "var(--font-heading)", fontSize: "18px", fontWeight: 700, color: C.anthracite, marginBottom: "8px" }}>
+            <h3 style={{ fontFamily: "var(--font-display)", fontSize: "18px", fontWeight: 700, color: C.anthracite, marginBottom: "8px" }}>
               Se deconnecter ?
             </h3>
             <p style={{ fontSize: "13px", color: C.taupe, marginBottom: "20px", lineHeight: 1.6 }}>
@@ -201,14 +201,14 @@ function Sidebar({ ouvert, fermer }: { ouvert: boolean; fermer: () => void }) {
               <button
                 onClick={() => setConfirmer(false)}
                 className="flex-1 rounded-lg"
-                style={{ padding: "10px", border: `1px solid ${C.border}`, backgroundColor: C.white, color: C.taupe, fontFamily: "var(--font-heading)", fontSize: "13px", fontWeight: 600, cursor: "pointer", minHeight: "44px" }}
+                style={{ padding: "10px", border: `1px solid ${C.border}`, backgroundColor: C.white, color: C.taupe, fontFamily: "var(--font-body)", fontSize: "13px", fontWeight: 600, cursor: "pointer", minHeight: "44px" }}
               >
                 Annuler
               </button>
               <button
                 onClick={deconnecter}
                 className="flex-1 rounded-lg"
-                style={{ padding: "10px", border: "none", backgroundColor: C.terra, color: C.white, fontFamily: "var(--font-heading)", fontSize: "13px", fontWeight: 600, cursor: "pointer", minHeight: "44px" }}
+                style={{ padding: "10px", border: "none", backgroundColor: C.terra, color: C.white, fontFamily: "var(--font-body)", fontSize: "13px", fontWeight: 600, cursor: "pointer", minHeight: "44px" }}
               >
                 Deconnexion
               </button>
@@ -259,7 +259,7 @@ function BarreHaut({ ouvrirMenu }: { ouvrirMenu: () => void }) {
             <Menu size={22} />
           </button>
           <div className="min-w-0">
-            <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "18px", fontWeight: 600, color: C.anthracite, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            <h1 style={{ fontFamily: "var(--font-display)", fontSize: "18px", fontWeight: 600, color: C.anthracite, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               {salutation(user)}
             </h1>
             <p style={{ fontSize: "12px", color: C.taupe, marginTop: "2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>

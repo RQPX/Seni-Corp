@@ -2,14 +2,14 @@
 // SENI CORP — Layout racine
 // C'est le "cadre" qui entoure toutes les pages du site.
 // Il fait 4 choses importantes :
-//   1. Charge les polices (Manrope, Inter, JetBrains Mono)
+//   1. Charge les polices (Source Serif 4, Inter, JetBrains Mono)
 //   2. Configure le viewport pour bien s'afficher sur mobile
 //   3. Recupere le nonce de securite du middleware
 //   4. Definit le titre et la description du site
 // ============================================================
 
 import type { Metadata, Viewport } from "next";
-import { Manrope, Inter, JetBrains_Mono } from "next/font/google";
+import { Source_Serif_4, Inter, JetBrains_Mono } from "next/font/google";
 import { headers } from "next/headers";
 import { Providers } from "./providers";
 import "@/styles/globals.css";
@@ -17,11 +17,14 @@ import "@/styles/globals.css";
 // -- Chargement des polices depuis Google Fonts --
 // next/font les telecharge une fois et les stocke localement
 // pour un chargement rapide et sans flash de texte non stylise
-const manrope = Manrope({
+// Source Serif 4 : titres de page, titres de section et grands nombres.
+// Police variable : un seul fichier couvre toutes les graisses, et l'axe
+// opsz ajuste le dessin a la taille d'affichage.
+const sourceSerif = Source_Serif_4({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-heading",     // accessible via font-heading dans Tailwind
-  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-display",     // accessible via font-display dans Tailwind
+  axes: ["opsz"],
 });
 
 const inter = Inter({
@@ -89,7 +92,7 @@ export default async function RootLayout({
   return (
     <html
       lang="fr"
-      className={`${manrope.variable} ${inter.variable} ${jetbrainsMono.variable}`}
+      className={`${sourceSerif.variable} ${inter.variable} ${jetbrainsMono.variable}`}
     >
       <body
         style={{

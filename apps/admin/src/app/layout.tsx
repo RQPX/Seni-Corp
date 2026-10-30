@@ -3,14 +3,15 @@
 // ============================================================
 
 import type { Metadata, Viewport } from "next";
-import { Manrope, Inter, JetBrains_Mono } from "next/font/google";
+import { Source_Serif_4, Inter, JetBrains_Mono } from "next/font/google";
 import { headers } from "next/headers";
 import { Providers } from "./providers";
 import "@/styles/globals.css";
 
-const manrope = Manrope({
-  subsets: ["latin"], display: "swap", variable: "--font-heading",
-  weight: ["400", "500", "600", "700", "800"],
+// Source Serif 4 : titres et grands nombres. Inter : tout le reste.
+// JetBrains Mono : numeros de suivi et codes de retrait.
+const sourceSerif = Source_Serif_4({
+  subsets: ["latin"], display: "swap", variable: "--font-display", axes: ["opsz"],
 });
 const inter = Inter({
   subsets: ["latin"], display: "swap", variable: "--font-body",
@@ -45,7 +46,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const nonce = (await headers()).get("x-nonce") ?? undefined;
 
   return (
-    <html lang="fr" className={`${manrope.variable} ${inter.variable} ${jetbrainsMono.variable}`}>
+    <html lang="fr" className={`${sourceSerif.variable} ${inter.variable} ${jetbrainsMono.variable}`}>
       <body
         style={{ fontFamily: "var(--font-body)", backgroundColor: "#FAF6F0", color: "#1A1A1A" }}
         data-nonce={nonce}

@@ -268,7 +268,7 @@ export function TourneePanel({ tourneeId, fermer }: { tourneeId: number | null; 
 
               <section>
                 <div className="flex items-center justify-between gap-3 mb-3">
-                  <h3 style={{ fontFamily: "var(--font-heading)", fontSize: "11px", textTransform: "uppercase", letterSpacing: "1.5px", color: C.taupeLight }}>
+                  <h3 style={{ fontFamily: "var(--font-body)", fontSize: "11px", textTransform: "uppercase", letterSpacing: "1.5px", color: C.taupeLight }}>
                     Manifeste ({tournee.colis.length})
                   </h3>
                   {composable && !ajout && (
@@ -329,7 +329,7 @@ export function TourneePanel({ tourneeId, fermer }: { tourneeId: number | null; 
               </section>
 
               <section>
-                <h3 style={{ fontFamily: "var(--font-heading)", fontSize: "11px", textTransform: "uppercase", letterSpacing: "1.5px", color: C.taupeLight, marginBottom: "12px" }}>
+                <h3 style={{ fontFamily: "var(--font-body)", fontSize: "11px", textTransform: "uppercase", letterSpacing: "1.5px", color: C.taupeLight, marginBottom: "12px" }}>
                   Cycle de vie
                 </h3>
 

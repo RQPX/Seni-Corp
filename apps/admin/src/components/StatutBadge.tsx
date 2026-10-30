@@ -17,7 +17,7 @@ export function StatutBadge({ statut, taille = "normale" }: {
       style={{
         backgroundColor: config.bg,
         color: config.color,
-        fontFamily: "var(--font-heading)",
+        fontFamily: "var(--font-body)",
         fontSize: petite ? "10px" : "11px",
         fontWeight: 600,
         letterSpacing: "0.3px",

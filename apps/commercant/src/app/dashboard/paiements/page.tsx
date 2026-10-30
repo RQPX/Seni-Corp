@@ -97,7 +97,7 @@ export default function PaiementsPage() {
 
   return (
     <div className="px-4 py-5 md:px-8 md:py-7 max-w-[1400px] mx-auto">
-      <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "22px", fontWeight: 700, color: C.anthracite, marginBottom: "24px" }}>Paiements</h1>
+      <h1 style={{ fontFamily: "var(--font-display)", fontSize: "22px", fontWeight: 700, color: C.anthracite, marginBottom: "24px" }}>Paiements</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-7">
 
@@ -106,9 +106,9 @@ export default function PaiementsPage() {
           <div className="absolute" style={{ top: "-30px", right: "-30px", width: "120px", height: "120px", background: `radial-gradient(circle, ${C.bronze} 0%, transparent 70%)`, opacity: 0.35 }} />
           <div className="flex items-center gap-2 mb-4">
             <Wallet size={18} style={{ color: C.bronzeLight }} />
-            <span style={{ fontFamily: "var(--font-heading)", fontSize: "10px", fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase", color: C.bronzeLight }}>Solde disponible</span>
+            <span style={{ fontFamily: "var(--font-body)", fontSize: "10px", fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase", color: C.bronzeLight }}>Solde disponible</span>
           </div>
-          <div style={{ fontFamily: "var(--font-heading)", fontSize: "36px", fontWeight: 800, color: C.white, lineHeight: 1 }}>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: "36px", fontWeight: 800, color: C.white, lineHeight: 1 }}>
             {profil ? profil.soldeCompte.toLocaleString("fr") : "—"}
             <span style={{ fontSize: "16px", fontWeight: 500, color: C.bronzeLight, marginLeft: "8px" }}>XOF</span>
           </div>
@@ -117,7 +117,7 @@ export default function PaiementsPage() {
         {/* Bloc recharge, reserve aux comptes entreprise */}
         {peutRecharger && (
         <div className="lg:col-span-2 rounded-2xl" style={{ backgroundColor: C.white, border: `1px solid ${C.border}`, padding: "24px" }}>
-          <h2 style={{ fontFamily: "var(--font-heading)", fontSize: "15px", fontWeight: 700, color: C.anthracite, marginBottom: "4px" }}>Recharger le compte</h2>
+          <h2 style={{ fontFamily: "var(--font-display)", fontSize: "15px", fontWeight: 700, color: C.anthracite, marginBottom: "4px" }}>Recharger le compte</h2>
           <p style={{ fontSize: "12px", color: C.taupeLight, marginBottom: "16px" }}>
             Paiement securise via <strong style={{ color: C.anthracite }}>CinetPay</strong>. Wave, Orange Money et carte bancaire sont acceptes.
           </p>
@@ -130,7 +130,7 @@ export default function PaiementsPage() {
                   border: selectedMontant === m ? `2px solid ${C.emerald}` : `1.5px solid ${C.border}`,
                   backgroundColor: selectedMontant === m ? C.emeraldSoft : C.ivory,
                 }}>
-                <div style={{ fontFamily: "var(--font-heading)", fontSize: "18px", fontWeight: 700, color: C.anthracite }}>{m.toLocaleString("fr")}</div>
+                <div style={{ fontFamily: "var(--font-display)", fontSize: "18px", fontWeight: 700, color: C.anthracite }}>{m.toLocaleString("fr")}</div>
                 <div style={{ fontSize: "10px", color: C.taupe, marginTop: "2px" }}>XOF</div>
               </button>
             ))}
@@ -147,7 +147,7 @@ export default function PaiementsPage() {
               backgroundColor: selectedMontant ? C.emerald : C.sage,
               color: selectedMontant ? C.white : C.taupeLight,
               border: "none",
-              fontFamily: "var(--font-heading)", fontSize: "13px", fontWeight: 600,
+              fontFamily: "var(--font-body)", fontSize: "13px", fontWeight: 600,
               cursor: selectedMontant ? "pointer" : "not-allowed",
               minHeight: "44px",
             }}>
@@ -168,7 +168,7 @@ export default function PaiementsPage() {
       {/* Historique des transactions */}
       <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: C.white, border: `1px solid ${C.border}` }}>
         <div className="px-5 py-4" style={{ borderBottom: `1px solid ${C.border}` }}>
-          <h2 style={{ fontFamily: "var(--font-heading)", fontSize: "15px", fontWeight: 700, color: C.anthracite }}>Historique des transactions</h2>
+          <h2 style={{ fontFamily: "var(--font-display)", fontSize: "15px", fontWeight: 700, color: C.anthracite }}>Historique des transactions</h2>
         </div>
         <div>
           {isPending ? (
@@ -200,7 +200,7 @@ export default function PaiementsPage() {
                 <div className="hidden sm:block shrink-0">
                   <span className="inline-flex items-center gap-1 rounded-full" style={{
                     padding: "3px 8px", fontSize: "10px", fontWeight: 600,
-                    fontFamily: "var(--font-heading)",
+                    fontFamily: "var(--font-body)",
                     backgroundColor: confirme ? C.emeraldSoft : C.bronzeSoft,
                     color: confirme ? C.success : C.bronze,
                   }}>
@@ -208,7 +208,7 @@ export default function PaiementsPage() {
                     {LABELS_STATUT_TRANSACTION[tx.statut] ?? tx.statut}
                   </span>
                 </div>
-                <div style={{ fontFamily: "var(--font-heading)", fontSize: "14px", fontWeight: 700, color: isCredit ? C.success : C.anthracite, whiteSpace: "nowrap" }}>
+                <div style={{ fontFamily: "var(--font-body)", fontSize: "14px", fontWeight: 700, color: isCredit ? C.success : C.anthracite, whiteSpace: "nowrap" }}>
                   {isCredit ? "+" : "−"}{Math.abs(tx.montant).toLocaleString("fr")} <span style={{ fontSize: "10px", fontWeight: 400, color: C.taupe }}>XOF</span>
                 </div>
               </div>
@@ -228,7 +228,7 @@ export default function PaiementsPage() {
                 disabled={page === 1}
                 className="rounded-lg"
                 style={{
-                  padding: "8px 14px", fontSize: "12px", fontWeight: 600, fontFamily: "var(--font-heading)",
+                  padding: "8px 14px", fontSize: "12px", fontWeight: 600, fontFamily: "var(--font-body)",
                   backgroundColor: page === 1 ? C.sage : C.white, border: `1px solid ${C.border}`,
                   color: page === 1 ? C.taupeLight : C.taupe,
                   cursor: page === 1 ? "not-allowed" : "pointer", minHeight: "40px",
@@ -241,7 +241,7 @@ export default function PaiementsPage() {
                 disabled={page >= transactions!.pages}
                 className="rounded-lg"
                 style={{
-                  padding: "8px 14px", fontSize: "12px", fontWeight: 600, fontFamily: "var(--font-heading)",
+                  padding: "8px 14px", fontSize: "12px", fontWeight: 600, fontFamily: "var(--font-body)",
                   backgroundColor: page >= transactions!.pages ? C.sage : C.emerald, border: "none",
                   color: page >= transactions!.pages ? C.taupeLight : C.white,
                   cursor: page >= transactions!.pages ? "not-allowed" : "pointer", minHeight: "40px",
@@ -259,14 +259,14 @@ export default function PaiementsPage() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 py-8" style={{ backgroundColor: "rgba(0,0,0,0.55)", overflowY: "auto" }} role="dialog" aria-modal="true">
           <div className="rounded-2xl w-full" style={{ maxWidth: "440px", backgroundColor: C.white, overflow: "hidden" }}>
             <div className="flex items-center justify-between px-6 py-4" style={{ backgroundColor: C.emerald }}>
-              <div style={{ fontFamily: "var(--font-heading)", fontSize: "16px", fontWeight: 700, color: C.white }}>Recharge via CinetPay</div>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: "16px", fontWeight: 700, color: C.white }}>Recharge via CinetPay</div>
               <button onClick={closeModal} aria-label="Fermer" style={{ background: "none", border: "none", color: C.bronzeLight, cursor: "pointer" }}><X size={20} /></button>
             </div>
 
             <div className="px-6 py-5">
               <div className="rounded-xl text-center mb-5" style={{ backgroundColor: C.emeraldSoft, padding: "16px" }}>
                 <div style={{ fontSize: "10px", color: C.taupe, textTransform: "uppercase", letterSpacing: "1.5px", fontWeight: 600, marginBottom: "6px" }}>Montant a recharger</div>
-                <div style={{ fontFamily: "var(--font-heading)", fontSize: "28px", fontWeight: 800, color: C.emerald }}>
+                <div style={{ fontFamily: "var(--font-display)", fontSize: "28px", fontWeight: 800, color: C.emerald }}>
                   {selectedMontant?.toLocaleString("fr")} <span style={{ fontSize: "14px", color: C.taupe }}>XOF</span>
                 </div>
               </div>
@@ -277,7 +277,7 @@ export default function PaiementsPage() {
                   <div className="rounded-xl mb-4" style={{ backgroundColor: C.warningSoft, border: `1px solid ${C.warning}`, padding: "14px" }}>
                     <div className="flex items-center gap-2" style={{ marginBottom: "6px" }}>
                       <Clock size={15} style={{ color: C.warning, flexShrink: 0 }} />
-                      <span style={{ fontFamily: "var(--font-heading)", fontSize: "13px", fontWeight: 700, color: C.anthracite }}>
+                      <span style={{ fontFamily: "var(--font-body)", fontSize: "13px", fontWeight: 700, color: C.anthracite }}>
                         En attente de paiement
                       </span>
                     </div>
@@ -297,7 +297,7 @@ export default function PaiementsPage() {
                   )}
 
                   <div className="flex gap-3">
-                    <button onClick={closeModal} className="flex-1 rounded-lg" style={{ padding: "11px", border: `1px solid ${C.border}`, backgroundColor: C.white, color: C.taupe, fontFamily: "var(--font-heading)", fontSize: "13px", fontWeight: 600, cursor: "pointer", minHeight: "44px" }}>
+                    <button onClick={closeModal} className="flex-1 rounded-lg" style={{ padding: "11px", border: `1px solid ${C.border}`, backgroundColor: C.white, color: C.taupe, fontFamily: "var(--font-body)", fontSize: "13px", fontWeight: 600, cursor: "pointer", minHeight: "44px" }}>
                       Fermer
                     </button>
                     {!erreurLien && (
@@ -307,7 +307,7 @@ export default function PaiementsPage() {
                         className="flex-1 flex items-center justify-center gap-2 rounded-lg"
                         style={{
                           padding: "11px", border: "none", backgroundColor: C.emerald, color: C.white,
-                          fontFamily: "var(--font-heading)", fontSize: "13px", fontWeight: 600,
+                          fontFamily: "var(--font-body)", fontSize: "13px", fontWeight: 600,
                           cursor: lien.isPending ? "wait" : "pointer", opacity: lien.isPending ? 0.7 : 1,
                           minHeight: "44px",
                         }}>
@@ -333,7 +333,7 @@ export default function PaiementsPage() {
                   )}
 
                   <div className="flex gap-3">
-                    <button onClick={closeModal} className="flex-1 rounded-lg" style={{ padding: "11px", border: `1px solid ${C.border}`, backgroundColor: C.white, color: C.taupe, fontFamily: "var(--font-heading)", fontSize: "13px", fontWeight: 600, cursor: "pointer", minHeight: "44px" }}>
+                    <button onClick={closeModal} className="flex-1 rounded-lg" style={{ padding: "11px", border: `1px solid ${C.border}`, backgroundColor: C.white, color: C.taupe, fontFamily: "var(--font-body)", fontSize: "13px", fontWeight: 600, cursor: "pointer", minHeight: "44px" }}>
                       Annuler
                     </button>
                     <button
@@ -342,7 +342,7 @@ export default function PaiementsPage() {
                       className="flex-1 rounded-lg"
                       style={{
                         padding: "11px", border: "none", backgroundColor: C.emerald, color: C.white,
-                        fontFamily: "var(--font-heading)", fontSize: "13px", fontWeight: 600,
+                        fontFamily: "var(--font-body)", fontSize: "13px", fontWeight: 600,
                         cursor: recharge.isPending ? "wait" : "pointer", opacity: recharge.isPending ? 0.7 : 1,
                         minHeight: "44px",
                       }}>

@@ -79,13 +79,13 @@ function PageConnexion() {
       <div className="w-full" style={{ maxWidth: "400px" }}>
         <div className="text-center mb-8">
           <div style={{
-            fontFamily: "var(--font-heading)", fontSize: "32px", fontWeight: 800,
+            fontFamily: "var(--font-display)", fontSize: "32px", fontWeight: 800,
             letterSpacing: "4px", color: C.emerald,
           }}>
             SENI CORP
           </div>
           <div style={{
-            fontFamily: "var(--font-heading)", fontSize: "11px", letterSpacing: "3px",
+            fontFamily: "var(--font-body)", fontSize: "11px", letterSpacing: "3px",
             color: C.bronze, textTransform: "uppercase", marginTop: "4px",
           }}>
             Exploitation
@@ -99,7 +99,7 @@ function PageConnexion() {
           autoComplete="on"
           noValidate
         >
-          <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "20px", fontWeight: 700, color: C.anthracite, marginBottom: "4px" }}>
+          <h1 style={{ fontFamily: "var(--font-display)", fontSize: "20px", fontWeight: 700, color: C.anthracite, marginBottom: "4px" }}>
             Connexion
           </h1>
           <p style={{ fontSize: "13px", color: C.taupe, marginBottom: "24px" }}>
@@ -173,7 +173,7 @@ function PageConnexion() {
               padding: "13px",
               backgroundColor: enCours ? C.taupeLight : C.emerald,
               color: C.white, border: "none",
-              fontFamily: "var(--font-heading)", fontSize: "14px", fontWeight: 600,
+              fontFamily: "var(--font-body)", fontSize: "14px", fontWeight: 600,
               cursor: enCours ? "wait" : "pointer",
               opacity: enCours ? 0.7 : 1,
               minHeight: "48px",

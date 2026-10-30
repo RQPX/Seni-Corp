@@ -192,7 +192,7 @@ export function SelectRelais({ relais, value, onChange, exclureId, placeholder, 
             <div key={ville}>
               <div
                 style={{
-                  fontFamily: "var(--font-heading)",
+                  fontFamily: "var(--font-body)",
                   fontSize: "10px",
                   fontWeight: 700,
                   letterSpacing: "1.5px",

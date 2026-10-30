@@ -73,7 +73,7 @@ export function FilterTabs({ options, value, onChange, ariaLabel = "Filtrer" }: 
           style={{
             padding: "12px 40px 12px 16px",
             fontSize: "15px",
-            fontFamily: "var(--font-heading)",
+            fontFamily: "var(--font-body)",
             fontWeight: 600,
             backgroundColor: C.white,
             border: `1px solid ${C.border}`,
@@ -123,7 +123,7 @@ export function FilterTabs({ options, value, onChange, ariaLabel = "Filtrer" }: 
             style={{
               padding: "8px 16px",
               fontSize: "13px",
-              fontFamily: "var(--font-heading)",
+              fontFamily: "var(--font-body)",
               fontWeight: isActive ? 700 : 500,
               backgroundColor: isActive ? C.emerald : C.white,
               color: isActive ? C.ivory : C.taupe,

@@ -7,8 +7,11 @@
    - L'accessibilite (focus visible, mouvement reduit, cible tactile)
    ============================================================ */
 
-/* -- Polices Google Fonts (chargees en une seule requete) -- */
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+/* -- Polices --
+   Chargees par next/font dans src/app/layout.tsx, qui les heberge avec le
+   site et pose les variables --font-display, --font-body et --font-mono sur
+   <html>. Ne pas les redefinir ici : une valeur dans :root masquerait celle
+   de next/font. */
 
 /* -- Tailwind layers (base + composants + utilitaires) -- */
 @tailwind base;
@@ -48,11 +51,6 @@
   --color-success:       #4A6B5C;
   --color-warning:       #B88838;
   --color-error:         #A04A3C;
-
-  /* Polices de la marque */
-  --font-heading: 'Manrope', sans-serif;
-  --font-body:    'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono:    'JetBrains Mono', 'Fira Code', monospace;
 
   /* Largeur de la sidebar (utilisee dans le layout dashboard) */
   --sidebar-width: 256px;
@@ -259,9 +257,16 @@ select {
    TYPOGRAPHIE DE BASE
    ============================================================ */
 
-/* Titres en Manrope (police heading) */
+/* Titres : Source Serif 4 pour h1 a h3, Inter pour les petits intertitres */
+h1, h2, h3 {
+  font-family: var(--font-display);
+}
+
+h4, h5, h6 {
+  font-family: var(--font-body);
+}
+
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-heading);
   font-weight: 700;
   color: var(--color-anthracite);
   line-height: 1.25;

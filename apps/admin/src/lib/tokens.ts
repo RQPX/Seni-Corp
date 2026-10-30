@@ -104,17 +104,17 @@ export const C = {
 // -- Typographie --
 // 3 familles avec des roles bien definis
 export const fonts = {
-  // Manrope : titres, nombres importants, navigation
-  // Sans-serif geometrique moderne, autorite et caractere
-  heading: "'Manrope', sans-serif",
+  // Source Serif 4 : titres de page, titres de section, grands nombres.
+  // Jamais dans les tableaux, les formulaires ni les boutons.
+  display: "var(--font-display), Georgia, serif",
 
   // Inter : corps de texte, formulaires, boutons
   // Concu pour les ecrans, lisibilite maximale
-  body: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+  body: "var(--font-body), -apple-system, BlinkMacSystemFont, sans-serif",
 
   // JetBrains Mono : tracking numbers, codes retrait, montants
   // Police technique, monospace, identifiable instantanement
-  mono: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
+  mono: "var(--font-mono), 'Consolas', monospace",
 } as const;
 
 

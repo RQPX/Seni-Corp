@@ -80,10 +80,10 @@ export function middleware(request: NextRequest) {
     }`,
 
     // Styles : notre domaine + styles inline (necessaire pour les libs UI)
-    `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
+    `style-src 'self' 'unsafe-inline'`,
 
     // Polices : notre domaine + Google Fonts
-    `font-src 'self' https://fonts.gstatic.com data:`,
+    `font-src 'self' data:`,
 
     // Images : notre domaine + Mapbox + S3 + data URIs (icones SVG)
     `img-src 'self' data: blob: https://*.mapbox.com https://seni-corp.s3.af-south-1.amazonaws.com`,

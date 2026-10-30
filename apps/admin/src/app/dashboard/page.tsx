@@ -97,7 +97,7 @@ export default function PageColis() {
   return (
     <div style={{ padding: "20px 16px 48px", maxWidth: "980px" }} className="md:px-8">
       <div className="mb-5">
-        <h2 style={{ fontFamily: "var(--font-heading)", fontSize: "22px", fontWeight: 700, color: C.anthracite }}>
+        <h2 style={{ fontFamily: "var(--font-display)", fontSize: "22px", fontWeight: 700, color: C.anthracite }}>
           Colis
         </h2>
         <p style={{ fontSize: "13px", color: C.taupe, marginTop: "4px" }}>
@@ -167,7 +167,7 @@ export default function PageColis() {
             border: "none",
             backgroundColor: C.emerald,
             color: C.white,
-            fontFamily: "var(--font-heading)",
+            fontFamily: "var(--font-body)",
             fontSize: "13px",
             fontWeight: 600,
             cursor: "pointer",

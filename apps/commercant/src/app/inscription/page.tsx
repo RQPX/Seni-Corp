@@ -127,14 +127,14 @@ export default function InscriptionPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div style={{
-            fontFamily: "var(--font-heading)",
+            fontFamily: "var(--font-display)",
             fontSize: "32px", fontWeight: 800, letterSpacing: "4px",
             color: C.emerald,
           }}>
             SENI CORP
           </div>
           <div style={{
-            fontFamily: "var(--font-heading)",
+            fontFamily: "var(--font-body)",
             fontSize: "11px", letterSpacing: "3px",
             color: C.bronze, textTransform: "uppercase", marginTop: "4px",
           }}>
@@ -149,7 +149,7 @@ export default function InscriptionPage() {
           autoComplete="on"
           noValidate
         >
-          <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "20px", fontWeight: 700, color: C.anthracite, marginBottom: "4px" }}>
+          <h1 style={{ fontFamily: "var(--font-display)", fontSize: "20px", fontWeight: 700, color: C.anthracite, marginBottom: "4px" }}>
             Creer un compte
           </h1>
           <p style={{ fontSize: "13px", color: C.taupe, marginBottom: "22px" }}>
@@ -179,7 +179,7 @@ export default function InscriptionPage() {
                     }}
                     aria-pressed={actif}
                   >
-                    <div style={{ fontFamily: "var(--font-heading)", fontSize: "13px", fontWeight: 600, color: C.anthracite }}>
+                    <div style={{ fontFamily: "var(--font-body)", fontSize: "13px", fontWeight: 600, color: C.anthracite }}>
                       {opt.titre}
                     </div>
                     <div style={{ fontSize: "11px", color: C.taupe, marginTop: "2px" }}>{opt.desc}</div>
@@ -305,7 +305,7 @@ export default function InscriptionPage() {
               padding: "13px",
               backgroundColor: loading ? C.taupeLight : C.emerald,
               color: C.white, border: "none",
-              fontFamily: "var(--font-heading)", fontSize: "14px", fontWeight: 600,
+              fontFamily: "var(--font-body)", fontSize: "14px", fontWeight: 600,
               cursor: loading ? "wait" : "pointer",
               opacity: loading ? 0.7 : 1,
               minHeight: "48px",

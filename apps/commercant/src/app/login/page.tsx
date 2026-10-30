@@ -97,14 +97,14 @@ function LoginPageInner() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div style={{
-            fontFamily: "var(--font-heading)",
+            fontFamily: "var(--font-display)",
             fontSize: "32px", fontWeight: 800, letterSpacing: "4px",
             color: C.emerald,
           }}>
             SENI CORP
           </div>
           <div style={{
-            fontFamily: "var(--font-heading)",
+            fontFamily: "var(--font-body)",
             fontSize: "11px", letterSpacing: "3px",
             color: C.bronze, textTransform: "uppercase", marginTop: "4px",
           }}>
@@ -122,7 +122,7 @@ function LoginPageInner() {
           // noValidate : on gere la validation nous-memes pour de meilleurs messages
           noValidate
         >
-          <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "20px", fontWeight: 700, color: C.anthracite, marginBottom: "4px" }}>
+          <h1 style={{ fontFamily: "var(--font-display)", fontSize: "20px", fontWeight: 700, color: C.anthracite, marginBottom: "4px" }}>
             Connexion
           </h1>
           <p style={{ fontSize: "13px", color: C.taupe, marginBottom: "24px" }}>
@@ -230,7 +230,7 @@ function LoginPageInner() {
               padding: "13px",
               backgroundColor: loading ? C.taupeLight : C.emerald,
               color: C.white, border: "none",
-              fontFamily: "var(--font-heading)", fontSize: "14px", fontWeight: 600,
+              fontFamily: "var(--font-body)", fontSize: "14px", fontWeight: 600,
               cursor: loading ? "wait" : "pointer",
               opacity: loading ? 0.7 : 1,
               minHeight: "48px",
