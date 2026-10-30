@@ -89,7 +89,7 @@ export function Badge({ statut, variant, children, className }: BadgeProps) {
         backgroundColor: bg,
         color: color,
         padding: "4px 10px",
-        fontFamily: "'Manrope', sans-serif",
+        fontFamily: "var(--font-body)",
         fontSize: "10px",
         fontWeight: 600,
         lineHeight: 1,

@@ -75,7 +75,7 @@ function SaveButton({ onClick, enCours, succes, label = "Enregistrer" }: {
         backgroundColor: succes ? C.emeraldSoft : C.emerald,
         color: succes ? C.emerald : C.white,
         border: succes ? `1px solid ${C.emerald}` : "none",
-        fontFamily: "var(--font-heading)", fontSize: "13px", fontWeight: 600,
+        fontFamily: "var(--font-body)", fontSize: "13px", fontWeight: 600,
         cursor: enCours ? "wait" : "pointer",
         opacity: enCours ? 0.7 : 1,
         minHeight: "44px",
@@ -159,7 +159,7 @@ export default function ParametresPage() {
 
   return (
     <div className="px-4 py-5 md:px-8 md:py-7 max-w-[1000px] mx-auto">
-      <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "22px", fontWeight: 700, color: C.anthracite, marginBottom: "24px" }}>
+      <h1 style={{ fontFamily: "var(--font-display)", fontSize: "22px", fontWeight: 700, color: C.anthracite, marginBottom: "24px" }}>
         Parametres
       </h1>
 
@@ -174,7 +174,7 @@ export default function ParametresPage() {
               onClick={() => setActiveTab(tab.id)}
               className="flex items-center gap-2 shrink-0 px-4 py-2.5 transition-colors"
               style={{
-                fontSize: "13px", fontWeight: 600, fontFamily: "var(--font-heading)",
+                fontSize: "13px", fontWeight: 600, fontFamily: "var(--font-body)",
                 color: isActive ? C.emerald : C.taupe,
                 background: "none", border: "none", cursor: "pointer",
                 borderBottomWidth: "2px", borderBottomStyle: "solid",
@@ -198,7 +198,7 @@ export default function ParametresPage() {
               <div className="flex items-center justify-center rounded-full shrink-0" style={{
                 width: "56px", height: "56px",
                 background: `linear-gradient(135deg, ${C.bronze}, ${C.bronzeLight})`,
-                fontFamily: "var(--font-heading)", fontSize: "18px", fontWeight: 700, color: C.white,
+                fontFamily: "var(--font-display)", fontSize: "18px", fontWeight: 700, color: C.white,
               }}>
                 {`${prenom[0] ?? ""}${nom[0] ?? ""}`.toUpperCase() || "--"}
               </div>
@@ -267,7 +267,7 @@ export default function ParametresPage() {
             ) : (
               <div className="text-center py-8">
                 <Building2 size={30} style={{ color: C.border, margin: "0 auto 10px" }} />
-                <p style={{ fontFamily: "var(--font-heading)", fontSize: "14px", fontWeight: 600, color: C.taupe }}>
+                <p style={{ fontFamily: "var(--font-body)", fontSize: "14px", fontWeight: 600, color: C.taupe }}>
                   Compte particulier
                 </p>
                 <p style={{ fontSize: "12px", color: C.taupeLight, marginTop: "4px" }}>
@@ -282,7 +282,7 @@ export default function ParametresPage() {
         {activeTab === "notifications" && (
           <div className="text-center py-10">
             <Bell size={30} style={{ color: C.border, margin: "0 auto 12px" }} />
-            <p style={{ fontFamily: "var(--font-heading)", fontSize: "15px", fontWeight: 600, color: C.anthracite }}>
+            <p style={{ fontFamily: "var(--font-body)", fontSize: "15px", fontWeight: 600, color: C.anthracite }}>
               Bientot disponible
             </p>
             <p style={{ fontSize: "12.5px", color: C.taupe, marginTop: "6px", lineHeight: 1.6, maxWidth: "440px", margin: "6px auto 0" }}>

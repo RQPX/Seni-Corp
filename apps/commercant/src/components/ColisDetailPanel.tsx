@@ -39,7 +39,7 @@ export function StatutBadge({ statut }: { statut: string }) {
       style={{
         backgroundColor: config.bg, color: config.color,
         padding: "4px 10px",
-        fontFamily: "var(--font-heading)",
+        fontFamily: "var(--font-body)",
         fontSize: "10px", fontWeight: 600, whiteSpace: "nowrap",
       }}
     >
@@ -99,7 +99,7 @@ export function ColisDetailPanel({ colis, onClose }: { colis: Colis; onClose: ()
             <ArrowLeft size={20} />
           </button>
           <div className="flex-1 min-w-0">
-            <div style={{ fontFamily: "var(--font-heading)", fontSize: "16px", fontWeight: 700, color: C.anthracite }}>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: "16px", fontWeight: 700, color: C.anthracite }}>
               Detail du colis
             </div>
           </div>
@@ -150,7 +150,7 @@ export function ColisDetailPanel({ colis, onClose }: { colis: Colis; onClose: ()
 
           {/* Destinataire */}
           <div>
-            <div style={{ fontFamily: "var(--font-heading)", fontSize: "13px", fontWeight: 700, color: C.anthracite, marginBottom: "10px" }}>
+            <div style={{ fontFamily: "var(--font-body)", fontSize: "13px", fontWeight: 700, color: C.anthracite, marginBottom: "10px" }}>
               Destinataire
             </div>
             <div className="flex items-center gap-3 rounded-xl p-4" style={{ backgroundColor: C.sage }}>
@@ -159,7 +159,7 @@ export function ColisDetailPanel({ colis, onClose }: { colis: Colis; onClose: ()
                 style={{
                   width: "40px", height: "40px",
                   backgroundColor: C.emeraldSoft, color: C.emerald,
-                  fontFamily: "var(--font-heading)", fontSize: "14px", fontWeight: 700,
+                  fontFamily: "var(--font-body)", fontSize: "14px", fontWeight: 700,
                 }}
               >
                 {colis.destinataireNom.split(" ").map((n) => n[0]).join("").slice(0, 2)}

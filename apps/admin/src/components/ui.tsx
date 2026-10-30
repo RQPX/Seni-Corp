@@ -22,7 +22,7 @@ export function EnTetePage({ titre, soustitre, action }: {
   return (
     <div className="flex items-start justify-between gap-3 mb-5">
       <div className="min-w-0">
-        <h2 style={{ fontFamily: "var(--font-heading)", fontSize: "22px", fontWeight: 700, color: C.anthracite }}>
+        <h2 style={{ fontFamily: "var(--font-display)", fontSize: "22px", fontWeight: 700, color: C.anthracite }}>
           {titre}
         </h2>
         {soustitre && (
@@ -80,7 +80,7 @@ export function Bouton({ children, onClick, variante = "principal", disabled, ty
         border: variante === "secondaire" ? `1px solid ${C.border}` : "none",
         backgroundColor: disabled ? C.sageDark : fonds[variante],
         color: disabled ? C.taupeLight : textes[variante],
-        fontFamily: "var(--font-heading)",
+        fontFamily: "var(--font-body)",
         fontSize: "13px",
         fontWeight: 600,
         cursor: disabled ? "not-allowed" : "pointer",
@@ -173,7 +173,7 @@ export function Pastille({ texte, fond, couleur }: { texte: string; fond: string
   return (
     <span
       className="inline-flex items-center rounded-full whitespace-nowrap"
-      style={{ backgroundColor: fond, color: couleur, fontFamily: "var(--font-heading)", fontSize: "10.5px", fontWeight: 600, letterSpacing: "0.3px", padding: "3px 9px" }}
+      style={{ backgroundColor: fond, color: couleur, fontFamily: "var(--font-body)", fontSize: "10.5px", fontWeight: 600, letterSpacing: "0.3px", padding: "3px 9px" }}
     >
       {texte}
     </span>
@@ -203,7 +203,7 @@ export function ReserveAu({ roles, children }: { roles: Role[]; children: ReactN
         <div className="flex items-start gap-3 rounded-xl" style={{ backgroundColor: C.white, border: `1px solid ${C.border}`, padding: "24px" }}>
           <Lock size={20} strokeWidth={1.6} style={{ color: C.taupeLight, marginTop: "2px", flexShrink: 0 }} />
           <div>
-            <p style={{ fontFamily: "var(--font-heading)", fontSize: "15px", fontWeight: 600, color: C.anthracite }}>
+            <p style={{ fontFamily: "var(--font-body)", fontSize: "15px", fontWeight: 600, color: C.anthracite }}>
               Cet ecran ne releve pas de ton poste
             </p>
             <p style={{ fontSize: "13px", color: C.taupe, marginTop: "6px", lineHeight: 1.6 }}>

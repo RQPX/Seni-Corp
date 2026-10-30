@@ -105,7 +105,7 @@ function ColisPageInner() {
       {/* -- En-tete : titre + bouton export CSV -- */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "22px", fontWeight: 700, color: C.anthracite }}>
+          <h1 style={{ fontFamily: "var(--font-display)", fontSize: "22px", fontWeight: 700, color: C.anthracite }}>
             Mes colis
           </h1>
           <p style={{ fontSize: "13px", color: C.taupe, marginTop: "4px" }}>
@@ -192,7 +192,7 @@ function ColisPageInner() {
                     key={h}
                     className="text-left"
                     style={{
-                      fontFamily: "var(--font-heading)", fontSize: "10px", fontWeight: 700,
+                      fontFamily: "var(--font-body)", fontSize: "10px", fontWeight: 700,
                       color: C.taupe, letterSpacing: "1.5px", textTransform: "uppercase",
                       padding: "10px 16px",
                     }}
@@ -216,7 +216,7 @@ function ColisPageInner() {
                 <tr>
                   <td colSpan={8} style={{ padding: "48px 16px", textAlign: "center" }}>
                     <AlertTriangle size={32} style={{ color: C.terra, margin: "0 auto 12px" }} />
-                    <p style={{ fontFamily: "var(--font-heading)", fontSize: "15px", fontWeight: 600, color: C.anthracite }}>
+                    <p style={{ fontFamily: "var(--font-body)", fontSize: "15px", fontWeight: 600, color: C.anthracite }}>
                       Impossible de charger les colis
                     </p>
                     <p style={{ fontSize: "12px", color: C.taupe, marginTop: "4px" }}>
@@ -228,7 +228,7 @@ function ColisPageInner() {
                 <tr>
                   <td colSpan={8} style={{ padding: "48px 16px", textAlign: "center" }}>
                     <Package size={32} style={{ color: C.border, margin: "0 auto 12px" }} />
-                    <p style={{ fontFamily: "var(--font-heading)", fontSize: "15px", fontWeight: 600, color: C.taupe }}>
+                    <p style={{ fontFamily: "var(--font-body)", fontSize: "15px", fontWeight: 600, color: C.taupe }}>
                       Aucun colis trouve
                     </p>
                     <p style={{ fontSize: "12px", color: C.taupeLight, marginTop: "4px" }}>
@@ -264,7 +264,7 @@ function ColisPageInner() {
                   <td style={{ padding: "12px 16px" }}>
                     <StatutBadge statut={colis.statut} />
                   </td>
-                  <td style={{ padding: "12px 16px", fontFamily: "var(--font-heading)", fontSize: "13px", fontWeight: 600, color: C.anthracite }}>
+                  <td style={{ padding: "12px 16px", fontFamily: "var(--font-body)", fontSize: "13px", fontWeight: 600, color: C.anthracite }}>
                     {colis.montant.toLocaleString("fr")}
                     <span style={{ color: C.taupe, fontSize: "11px", fontWeight: 400 }}> XOF</span>
                   </td>
@@ -295,7 +295,7 @@ function ColisPageInner() {
                 className="rounded-lg"
                 style={{
                   padding: "8px 14px", fontSize: "12px", fontWeight: 600,
-                  fontFamily: "var(--font-heading)",
+                  fontFamily: "var(--font-body)",
                   backgroundColor: page === 1 ? C.sage : C.white,
                   border: `1px solid ${C.border}`,
                   color: page === 1 ? C.taupeLight : C.taupe,
@@ -314,7 +314,7 @@ function ColisPageInner() {
                 className="rounded-lg"
                 style={{
                   padding: "8px 14px", fontSize: "12px", fontWeight: 600,
-                  fontFamily: "var(--font-heading)",
+                  fontFamily: "var(--font-body)",
                   backgroundColor: page >= totalPages ? C.sage : C.emerald,
                   border: "none",
                   color: page >= totalPages ? C.taupeLight : C.white,

@@ -54,7 +54,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   return (
     <div className="flex flex-col gap-1.5">
       <label style={{
-        fontFamily: "var(--font-heading)", fontSize: "10px", fontWeight: 600,
+        fontFamily: "var(--font-body)", fontSize: "10px", fontWeight: 600,
         letterSpacing: "0.5px", textTransform: "uppercase", color: C.taupe,
       }}>
         {label}
@@ -228,7 +228,7 @@ export default function NouveauColisPage() {
   if (!peutCreer) {
     return (
       <div className="px-4 py-5 md:px-8 md:py-7 mx-auto" style={{ maxWidth: "1000px", width: "100%" }}>
-        <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "22px", fontWeight: 700, color: C.anthracite, marginBottom: "6px" }}>
+        <h1 style={{ fontFamily: "var(--font-display)", fontSize: "22px", fontWeight: 700, color: C.anthracite, marginBottom: "6px" }}>
           Nouveau colis
         </h1>
         <p style={{ fontSize: "13px", color: C.taupe, marginBottom: "28px" }}>
@@ -244,7 +244,7 @@ export default function NouveauColisPage() {
           >
             <Package size={26} />
           </div>
-          <h2 style={{ fontFamily: "var(--font-heading)", fontSize: "18px", fontWeight: 700, color: C.anthracite, marginBottom: "8px" }}>
+          <h2 style={{ fontFamily: "var(--font-display)", fontSize: "18px", fontWeight: 700, color: C.anthracite, marginBottom: "8px" }}>
             Creation reservee aux comptes client
           </h2>
           <p style={{ fontSize: "13px", color: C.taupe, lineHeight: 1.7, maxWidth: "460px", margin: "0 auto" }}>
@@ -264,7 +264,7 @@ export default function NouveauColisPage() {
       className="px-4 py-5 md:px-8 md:py-7 mx-auto"
       style={{ maxWidth: "1000px", width: "100%", minWidth: 0 }}
     >
-      <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "22px", fontWeight: 700, color: C.anthracite, marginBottom: "6px" }}>
+      <h1 style={{ fontFamily: "var(--font-display)", fontSize: "22px", fontWeight: 700, color: C.anthracite, marginBottom: "6px" }}>
         Nouveau colis
       </h1>
       <p style={{ fontSize: "13px", color: C.taupe, marginBottom: "28px" }}>
@@ -292,7 +292,7 @@ export default function NouveauColisPage() {
                   {isDone ? <Check size={14} strokeWidth={3} /> : <Icon size={14} strokeWidth={2} />}
                 </div>
                 <span style={{
-                  fontFamily: "var(--font-heading)", fontSize: "12px", fontWeight: 600,
+                  fontFamily: "var(--font-body)", fontSize: "12px", fontWeight: 600,
                   color: isActive ? C.anthracite : C.taupe, whiteSpace: "nowrap",
                 }}>
                   {s.label}
@@ -322,13 +322,13 @@ export default function NouveauColisPage() {
             }}
           >
             <div style={{
-              fontFamily: "var(--font-heading)", fontSize: "10px", fontWeight: 700,
+              fontFamily: "var(--font-body)", fontSize: "10px", fontWeight: 700,
               letterSpacing: "2px", textTransform: "uppercase",
               color: C.bronze, marginBottom: "4px",
             }}>
               Etape {step} / 4
             </div>
-            <h2 style={{ fontFamily: "var(--font-heading)", fontSize: "18px", fontWeight: 700, color: C.anthracite, marginBottom: "24px" }}>
+            <h2 style={{ fontFamily: "var(--font-display)", fontSize: "18px", fontWeight: 700, color: C.anthracite, marginBottom: "24px" }}>
               {STEPS[step - 1].label}
             </h2>
 
@@ -393,7 +393,7 @@ export default function NouveauColisPage() {
                       aria-pressed={isSelected}
                     >
                       <Icon size={28} style={{ color: isSelected ? C.emerald : C.taupe, marginBottom: "12px" }} />
-                      <div style={{ fontFamily: "var(--font-heading)", fontSize: "15px", fontWeight: 600, color: C.anthracite, marginBottom: "4px" }}>
+                      <div style={{ fontFamily: "var(--font-body)", fontSize: "15px", fontWeight: 600, color: C.anthracite, marginBottom: "4px" }}>
                         {opt.name}
                       </div>
                       <p style={{ fontSize: "12px", color: C.taupe, lineHeight: 1.5 }}>{opt.desc}</p>
@@ -479,13 +479,13 @@ export default function NouveauColisPage() {
                 {/* Selection du moyen de paiement */}
                 <div>
                   <div style={{
-                    fontFamily: "var(--font-heading)", fontSize: "10px", fontWeight: 700,
+                    fontFamily: "var(--font-body)", fontSize: "10px", fontWeight: 700,
                     letterSpacing: "2px", textTransform: "uppercase",
                     color: C.bronze, marginBottom: "4px", marginTop: "8px",
                   }}>
                     Moyen de paiement
                   </div>
-                  <div style={{ fontFamily: "var(--font-heading)", fontSize: "16px", fontWeight: 700, color: C.anthracite, marginBottom: "12px" }}>
+                  <div style={{ fontFamily: "var(--font-display)", fontSize: "16px", fontWeight: 700, color: C.anthracite, marginBottom: "12px" }}>
                     Comment souhaites-tu payer ?
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -503,7 +503,7 @@ export default function NouveauColisPage() {
                         }}
                         aria-pressed={modePaiement === pm.id}
                       >
-                        <div style={{ fontFamily: "var(--font-heading)", fontSize: "14px", fontWeight: 600, color: C.anthracite }}>
+                        <div style={{ fontFamily: "var(--font-body)", fontSize: "14px", fontWeight: 600, color: C.anthracite }}>
                           {pm.label}
                         </div>
                         <div style={{ fontSize: "11px", color: C.taupe, marginTop: "2px" }}>{pm.desc}</div>
@@ -549,7 +549,7 @@ export default function NouveauColisPage() {
                     cursor: "pointer",
                     backgroundColor: "transparent",
                     border: `1px solid ${C.border}`,
-                    color: C.taupe, fontFamily: "var(--font-heading)",
+                    color: C.taupe, fontFamily: "var(--font-body)",
                     minHeight: "44px",
                   }}
                 >
@@ -569,7 +569,7 @@ export default function NouveauColisPage() {
                     cursor: canNext ? "pointer" : "not-allowed",
                     backgroundColor: canNext ? C.emerald : C.sage,
                     color: canNext ? C.white : C.taupeLight,
-                    border: "none", fontFamily: "var(--font-heading)",
+                    border: "none", fontFamily: "var(--font-body)",
                     minHeight: "44px",
                   }}
                 >
@@ -586,7 +586,7 @@ export default function NouveauColisPage() {
                     cursor: canNext && tarif !== null && !tarifLoading ? "pointer" : "not-allowed",
                     backgroundColor: canNext && tarif !== null && !tarifLoading ? C.bronze : C.sage,
                     color: canNext && tarif !== null && !tarifLoading ? C.white : C.taupeLight,
-                    border: "none", fontFamily: "var(--font-heading)",
+                    border: "none", fontFamily: "var(--font-body)",
                     minHeight: "44px",
                   }}
                 >
@@ -605,7 +605,7 @@ export default function NouveauColisPage() {
             style={{ backgroundColor: C.emerald, padding: "22px" }}
           >
             <h3 style={{
-              fontFamily: "var(--font-heading)", fontSize: "11px", fontWeight: 700,
+              fontFamily: "var(--font-body)", fontSize: "11px", fontWeight: 700,
               letterSpacing: "2px", textTransform: "uppercase",
               color: C.bronzeLight, marginBottom: "18px",
             }}>
@@ -653,13 +653,13 @@ export default function NouveauColisPage() {
 
             <div className="rounded-xl text-center mt-5" style={{ backgroundColor: "rgba(184, 147, 90, 0.2)", padding: "16px" }}>
               <div style={{
-                fontFamily: "var(--font-heading)", fontSize: "10px",
+                fontFamily: "var(--font-body)", fontSize: "10px",
                 color: C.bronzeLight, letterSpacing: "1.5px",
                 textTransform: "uppercase", marginBottom: "6px",
               }}>
                 Total a payer
               </div>
-              <div style={{ fontFamily: "var(--font-heading)", fontSize: "28px", fontWeight: 800, color: C.white }}>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: "28px", fontWeight: 800, color: C.white }}>
                 {tarifLoading ? "..." : tarif ? tarif.montant.toLocaleString("fr") : "—"}
                 <span style={{ fontSize: "14px", fontWeight: 500, color: C.bronzeLight, marginLeft: "6px" }}>
                   XOF
@@ -687,7 +687,7 @@ export default function NouveauColisPage() {
               <div className="p-7">
                 <div className="text-center">
                   <CheckCircle2 size={52} style={{ color: C.success, margin: "0 auto 14px" }} />
-                  <div style={{ fontFamily: "var(--font-heading)", fontSize: "20px", fontWeight: 700, color: C.anthracite, marginBottom: "6px" }}>
+                  <div style={{ fontFamily: "var(--font-display)", fontSize: "20px", fontWeight: 700, color: C.anthracite, marginBottom: "6px" }}>
                     Colis enregistre
                   </div>
                   <div style={{ fontSize: "13px", color: C.taupe }}>
@@ -709,7 +709,7 @@ export default function NouveauColisPage() {
                   <div className="flex items-center gap-2" style={{ marginBottom: "8px" }}>
                     <AlertTriangle size={15} style={{ color: C.warning, flexShrink: 0 }} />
                     <span style={{
-                      fontFamily: "var(--font-heading)", fontSize: "11px", fontWeight: 700,
+                      fontFamily: "var(--font-body)", fontSize: "11px", fontWeight: 700,
                       textTransform: "uppercase", letterSpacing: "1px", color: C.warning,
                     }}>
                       Code de retrait
@@ -752,7 +752,7 @@ export default function NouveauColisPage() {
                   className="w-full rounded-lg mt-5"
                   style={{
                     padding: "12px 24px", backgroundColor: C.emerald, color: C.white,
-                    border: "none", fontFamily: "var(--font-heading)",
+                    border: "none", fontFamily: "var(--font-body)",
                     fontSize: "13px", fontWeight: 600, cursor: "pointer",
                     minHeight: "44px",
                   }}
@@ -763,11 +763,11 @@ export default function NouveauColisPage() {
             ) : (
               // Confirmation avant creation
               <div className="p-6">
-                <div style={{ fontFamily: "var(--font-heading)", fontSize: "18px", fontWeight: 700, color: C.anthracite, marginBottom: "16px" }}>
+                <div style={{ fontFamily: "var(--font-display)", fontSize: "18px", fontWeight: 700, color: C.anthracite, marginBottom: "16px" }}>
                   Confirmer le paiement
                 </div>
                 <div className="rounded-xl text-center mb-4" style={{ backgroundColor: C.emeraldSoft, padding: "14px" }}>
-                  <div style={{ fontFamily: "var(--font-heading)", fontSize: "24px", fontWeight: 800, color: C.emerald }}>
+                  <div style={{ fontFamily: "var(--font-display)", fontSize: "24px", fontWeight: 800, color: C.emerald }}>
                     {tarif!.montant.toLocaleString("fr")} XOF
                   </div>
                   <div style={{ fontSize: "12px", color: C.taupe, marginTop: "4px" }}>
@@ -799,7 +799,7 @@ export default function NouveauColisPage() {
                     style={{
                       padding: "12px", border: `1px solid ${C.border}`,
                       backgroundColor: C.white, color: C.taupe,
-                      fontFamily: "var(--font-heading)",
+                      fontFamily: "var(--font-body)",
                       fontSize: "13px", fontWeight: 600, cursor: "pointer",
                       minHeight: "44px",
                     }}
@@ -813,7 +813,7 @@ export default function NouveauColisPage() {
                     style={{
                       padding: "12px", border: "none",
                       backgroundColor: C.emerald, color: C.white,
-                      fontFamily: "var(--font-heading)",
+                      fontFamily: "var(--font-body)",
                       fontSize: "13px", fontWeight: 600,
                       cursor: creation.isPending ? "wait" : "pointer",
                       opacity: creation.isPending ? 0.7 : 1,

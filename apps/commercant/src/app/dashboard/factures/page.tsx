@@ -16,7 +16,7 @@ import { C } from "@/lib/tokens";
 export default function FacturesPage() {
   return (
     <div className="px-4 py-5 md:px-8 md:py-7 max-w-[1400px] mx-auto">
-      <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "22px", fontWeight: 700, color: C.anthracite, marginBottom: "6px" }}>
+      <h1 style={{ fontFamily: "var(--font-display)", fontSize: "22px", fontWeight: 700, color: C.anthracite, marginBottom: "6px" }}>
         Factures
       </h1>
       <p style={{ fontSize: "13px", color: C.taupe, marginBottom: "28px" }}>
@@ -34,7 +34,7 @@ export default function FacturesPage() {
           <FileText size={26} />
         </div>
 
-        <h2 style={{ fontFamily: "var(--font-heading)", fontSize: "18px", fontWeight: 700, color: C.anthracite, marginBottom: "8px" }}>
+        <h2 style={{ fontFamily: "var(--font-display)", fontSize: "18px", fontWeight: 700, color: C.anthracite, marginBottom: "8px" }}>
           Bientot disponible
         </h2>
         <p style={{ fontSize: "13px", color: C.taupe, lineHeight: 1.7, maxWidth: "460px", margin: "0 auto 24px" }}>
@@ -49,7 +49,7 @@ export default function FacturesPage() {
           className="inline-flex items-center gap-2 rounded-lg"
           style={{
             padding: "11px 20px", backgroundColor: C.emerald, color: C.white,
-            textDecoration: "none", fontFamily: "var(--font-heading)",
+            textDecoration: "none", fontFamily: "var(--font-body)",
             fontSize: "13px", fontWeight: 600, minHeight: "44px",
           }}
         >

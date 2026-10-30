@@ -22,11 +22,12 @@ const config: Config = {
       colors: { ...colors },
 
       // -- Polices personnalisees --
-      // Classes generees : font-heading, font-body, font-mono
+      // Classes generees : font-display, font-body, font-mono.
+      // Les variables sont posees par next/font dans src/app/layout.tsx.
       fontFamily: {
-        heading: ["'Manrope'", "sans-serif"],
-        body:    ["'Inter'", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
-        mono:    ["'JetBrains Mono'", "'Fira Code'", "monospace"],
+        display: ["var(--font-display)", "Georgia", "serif"],
+        body:    ["var(--font-body)", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
+        mono:    ["var(--font-mono)", "Consolas", "monospace"],
       },
 
       // -- Tailles de texte avec line-height integre --

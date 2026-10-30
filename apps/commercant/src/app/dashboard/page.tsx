@@ -40,10 +40,10 @@ function ChartTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-lg shadow-lg" style={{ backgroundColor: C.emerald, padding: "10px 14px" }}>
-      <div style={{ fontFamily: "var(--font-heading)", fontSize: "10px", color: C.bronzeLight, letterSpacing: "1px", textTransform: "uppercase", marginBottom: "4px" }}>
+      <div style={{ fontFamily: "var(--font-body)", fontSize: "10px", color: C.bronzeLight, letterSpacing: "1px", textTransform: "uppercase", marginBottom: "4px" }}>
         {label}
       </div>
-      <div style={{ fontFamily: "var(--font-heading)", fontSize: "18px", fontWeight: 700, color: C.white }}>
+      <div style={{ fontFamily: "var(--font-display)", fontSize: "18px", fontWeight: 700, color: C.white }}>
         {payload[0].value} colis
       </div>
     </div>
@@ -80,7 +80,7 @@ function KpiCard({ label, value, unit, trendLabel, featured = false }: {
         />
       )}
       <div style={{
-        fontFamily: "var(--font-heading)", fontSize: "10px", fontWeight: 600,
+        fontFamily: "var(--font-body)", fontSize: "10px", fontWeight: 600,
         letterSpacing: "1.5px", textTransform: "uppercase",
         color: featured ? C.bronzeLight : C.taupe,
         marginBottom: "12px",
@@ -89,7 +89,7 @@ function KpiCard({ label, value, unit, trendLabel, featured = false }: {
       </div>
       <div className="flex items-baseline gap-1.5 flex-wrap">
         <span style={{
-          fontFamily: "var(--font-heading)", fontSize: "30px", fontWeight: 700,
+          fontFamily: "var(--font-display)", fontSize: "30px", fontWeight: 700,
           color: featured ? C.white : C.anthracite, lineHeight: 1,
           wordBreak: "break-word",
         }}>
@@ -97,7 +97,7 @@ function KpiCard({ label, value, unit, trendLabel, featured = false }: {
         </span>
         {unit && (
           <span style={{
-            fontFamily: "var(--font-heading)", fontSize: "14px", fontWeight: 500,
+            fontFamily: "var(--font-body)", fontSize: "14px", fontWeight: 500,
             color: featured ? C.bronzeLight : C.taupe,
           }}>
             {unit}
@@ -237,15 +237,15 @@ export default function DashboardPage() {
           }}
         >
           <div className="flex items-center justify-between mb-5">
-            <h2 style={{ fontFamily: "var(--font-heading)", fontSize: "15px", fontWeight: 700, color: C.anthracite }}>
+            <h2 style={{ fontFamily: "var(--font-display)", fontSize: "15px", fontWeight: 700, color: C.anthracite }}>
               Activite des 14 derniers jours
             </h2>
           </div>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={chartData} barCategoryGap="25%">
               <CartesianGrid strokeDasharray="4 4" stroke={C.border} vertical={false} />
-              <XAxis dataKey="jour" tick={{ fill: C.taupe, fontSize: 10, fontFamily: "Manrope" }} axisLine={{ stroke: C.border }} tickLine={false} />
-              <YAxis tick={{ fill: C.taupe, fontSize: 10, fontFamily: "Manrope" }} axisLine={false} tickLine={false} width={30} allowDecimals={false} />
+              <XAxis dataKey="jour" tick={{ fill: C.taupe, fontSize: 10 }} axisLine={{ stroke: C.border }} tickLine={false} />
+              <YAxis tick={{ fill: C.taupe, fontSize: 10 }} axisLine={false} tickLine={false} width={30} allowDecimals={false} />
               <Tooltip content={<ChartTooltip />} cursor={{ fill: C.emeraldSoft }} />
               <Bar dataKey="colis" fill={C.emerald} radius={[4, 4, 0, 0]} maxBarSize={36} />
             </BarChart>
@@ -263,7 +263,7 @@ export default function DashboardPage() {
             minWidth: 0,
           }}
         >
-          <h2 style={{ fontFamily: "var(--font-heading)", fontSize: "15px", fontWeight: 700, color: C.anthracite, marginBottom: "16px" }}>
+          <h2 style={{ fontFamily: "var(--font-display)", fontSize: "15px", fontWeight: 700, color: C.anthracite, marginBottom: "16px" }}>
             Activite recente
           </h2>
           {recentActivity.length === 0 ? (
@@ -304,7 +304,7 @@ export default function DashboardPage() {
           }}
         >
           <div className="px-5 py-4" style={{ borderBottom: `1px solid ${C.border}` }}>
-            <h2 style={{ fontFamily: "var(--font-heading)", fontSize: "15px", fontWeight: 700, color: C.anthracite, marginBottom: "12px" }}>
+            <h2 style={{ fontFamily: "var(--font-display)", fontSize: "15px", fontWeight: 700, color: C.anthracite, marginBottom: "12px" }}>
               Colis recents
             </h2>
             {/* Sur telephone : dropdown natif. Sur desktop : pilules horizontales. */}
@@ -326,7 +326,7 @@ export default function DashboardPage() {
                       key={h}
                       className="text-left"
                       style={{
-                        fontFamily: "var(--font-heading)", fontSize: "10px", fontWeight: 700,
+                        fontFamily: "var(--font-body)", fontSize: "10px", fontWeight: 700,
                         color: C.taupe, letterSpacing: "1.5px", textTransform: "uppercase",
                         padding: "10px 20px",
                       }}
@@ -375,7 +375,7 @@ export default function DashboardPage() {
                     <td style={{ padding: "14px 20px" }}>
                       <StatutBadge statut={item.statut} />
                     </td>
-                    <td style={{ padding: "14px 20px", fontFamily: "var(--font-heading)", fontSize: "13px", fontWeight: 600, color: C.anthracite }}>
+                    <td style={{ padding: "14px 20px", fontFamily: "var(--font-body)", fontSize: "13px", fontWeight: 600, color: C.anthracite }}>
                       {item.montant.toLocaleString("fr")}
                       <span style={{ color: C.taupe, fontSize: "11px", fontWeight: 400 }}> XOF</span>
                     </td>

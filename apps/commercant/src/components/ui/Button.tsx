@@ -14,7 +14,7 @@ const buttonVariants = cva(
   // Classes de base communes a tous les boutons
   [
     "inline-flex items-center justify-center gap-2",
-    "font-heading font-semibold",        // police Manrope
+    "font-body font-semibold",
     "rounded-button",                     // coins arrondis 8px
     "transition-all duration-fast",       // transition rapide
     "cursor-pointer select-none",

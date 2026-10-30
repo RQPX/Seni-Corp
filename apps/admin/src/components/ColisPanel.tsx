@@ -191,7 +191,7 @@ function Actions({ colisId, transitions }: {
                 border: `1px solid ${choisi ? (danger ? C.terra : C.emerald) : C.border}`,
                 backgroundColor: choisi ? (danger ? C.terra : C.emerald) : C.white,
                 color: choisi ? C.white : (danger ? C.terra : C.emerald),
-                fontFamily: "var(--font-heading)",
+                fontFamily: "var(--font-body)",
                 fontSize: "12.5px",
                 fontWeight: 600,
                 cursor: "pointer",
@@ -279,7 +279,7 @@ function Actions({ colisId, transitions }: {
               border: "none",
               backgroundColor: peutValider ? (grave ? C.terra : C.emerald) : C.sageDark,
               color: peutValider ? C.white : C.taupeLight,
-              fontFamily: "var(--font-heading)",
+              fontFamily: "var(--font-body)",
               fontSize: "13.5px",
               fontWeight: 600,
               cursor: peutValider ? "pointer" : "not-allowed",
@@ -417,14 +417,14 @@ export function ColisPanel({ colisId, fermer }: { colisId: number | null; fermer
               </section>
 
               <section>
-                <h3 style={{ fontFamily: "var(--font-heading)", fontSize: "11px", textTransform: "uppercase", letterSpacing: "1.5px", color: C.taupeLight, marginBottom: "12px" }}>
+                <h3 style={{ fontFamily: "var(--font-body)", fontSize: "11px", textTransform: "uppercase", letterSpacing: "1.5px", color: C.taupeLight, marginBottom: "12px" }}>
                   Traitement
                 </h3>
                 <Actions colisId={colis.id} transitions={colis.transitionsPossibles} />
               </section>
 
               <section>
-                <h3 style={{ fontFamily: "var(--font-heading)", fontSize: "11px", textTransform: "uppercase", letterSpacing: "1.5px", color: C.taupeLight, marginBottom: "12px" }}>
+                <h3 style={{ fontFamily: "var(--font-body)", fontSize: "11px", textTransform: "uppercase", letterSpacing: "1.5px", color: C.taupeLight, marginBottom: "12px" }}>
                   Journal de suivi
                 </h3>
                 <Journal evenements={colis.evenements} />
