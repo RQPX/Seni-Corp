@@ -8,7 +8,7 @@
 
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ajouterColisTournee,
   annulerTournee,
@@ -26,6 +26,7 @@ import {
   getChauffeurs,
   getLignes,
   getMesTournees,
+  getStatistiquesReseau,
   getTournees,
   getTournee,
   modifierChauffeur,
@@ -48,10 +49,27 @@ export const cles = {
   lignes: ['lignes'] as const,
   tournees: ['tournees'] as const,
   tourneeDetail: (id: number) => ['tournees', 'detail', id] as const,
+  statistiques: (depuis: string, jusqua: string) => ['statistiques', depuis, jusqua] as const,
 };
 
 export function useUtilisateur() {
   return useQuery({ queryKey: cles.moi, queryFn: getCurrentUser, staleTime: 5 * 60_000 });
+}
+
+/**
+ * Agregats de l'ecran de pilotage. En changeant de periode, on garde les
+ * chiffres precedents a l'ecran le temps que les nouveaux arrivent, au
+ * lieu de tout vider.
+ */
+export function useStatistiquesReseau(depuis: string, jusqua: string) {
+  return useQuery({
+    queryKey: cles.statistiques(depuis, jusqua),
+    queryFn: () => getStatistiquesReseau(depuis, jusqua),
+    // Pas de requete tant que la periode n'est pas complete.
+    enabled: depuis !== "" && jusqua !== "",
+    placeholderData: keepPreviousData,
+    staleTime: 60_000,
+  });
 }
 
 export function useColis(params: ListeColisParams) {
@@ -227,7 +245,7 @@ export function useCreerLigne() {
   return useMutation({
     mutationFn: (d: {
       libelle: string; origineId: number; destinationId: number;
-      joursDesserte?: number[]; dureeEstimeeMin: number;
+      joursDesserte?: number[]; dureeEstimeeMin: number; heureDepartMinutes?: number | null;
     }) => creerLigne(d),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: cles.lignes }),
   });
@@ -236,7 +254,10 @@ export function useCreerLigne() {
 export function useModifierLigne() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (d: { id: number; libelle?: string; joursDesserte?: number[]; dureeEstimeeMin?: number; actif?: boolean }) =>
+    mutationFn: (d: {
+      id: number; libelle?: string; joursDesserte?: number[]; dureeEstimeeMin?: number;
+      heureDepartMinutes?: number | null; actif?: boolean;
+    }) =>
       modifierLigne(d.id, d),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: cles.lignes }),
   });

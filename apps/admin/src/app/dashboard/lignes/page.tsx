@@ -35,6 +35,21 @@ function dureeLisible(minutes: number): string {
   return m === 0 ? `${h} h` : `${h} h ${String(m).padStart(2, "0")}`;
 }
 
+/** 420 devient "07:00". null devient "" (pas d'horaire fixe). */
+function minutesVersHeure(minutes: number | null): string {
+  if (minutes === null) return "";
+  return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+}
+
+/** "07:00" devient 420. Une saisie vide devient null. */
+function heureVersMinutes(heure: string): number | null {
+  const m = heure.match(/^(\d{2}):(\d{2})$/);
+  return m ? Number(m[1]) * 60 + Number(m[2]) : null;
+}
+
+const AIDE_HEURE =
+  "Facultatif. Si la ligne part a heure fixe, cette heure est posee sur chaque nouvelle tournee, et le retard se mesure en minutes.";
+
 function ChoixJours({ choisis, basculer }: { choisis: number[]; basculer: (n: number) => void }) {
   return (
     <div className="flex flex-wrap gap-1.5">
@@ -67,19 +82,39 @@ function ChoixJours({ choisis, basculer }: { choisis: number[]; basculer: (n: nu
   );
 }
 
+function ChampHeure({ valeur, changer }: { valeur: string; changer: (v: string) => void }) {
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        type="time"
+        value={valeur}
+        onChange={(e) => changer(e.target.value)}
+        style={{ ...styleSaisie, fontFamily: "var(--font-mono)", maxWidth: "160px" }}
+      />
+      {valeur !== "" && (
+        <Bouton variante="secondaire" onClick={() => changer("")}>Sans horaire</Bouton>
+      )}
+    </div>
+  );
+}
+
 function LigneCarte({ ligne }: { ligne: Ligne }) {
   const mutation = useModifierLigne();
   const [edition, setEdition] = useState(false);
   const [libelle, setLibelle] = useState(ligne.libelle);
   const [jours, setJours] = useState<number[]>(ligne.joursDesserte);
   const [duree, setDuree] = useState(String(ligne.dureeEstimeeMin));
+  const [heure, setHeure] = useState(minutesVersHeure(ligne.heureDepartMinutes));
 
   const dureeNb = Number(duree);
   const valide = libelle.trim().length >= 3 && dureeNb > 0 && dureeNb <= DUREE_MAX_MIN;
 
   const enregistrer = () => {
     mutation.mutate(
-      { id: ligne.id, libelle: libelle.trim(), joursDesserte: jours, dureeEstimeeMin: dureeNb },
+      {
+        id: ligne.id, libelle: libelle.trim(), joursDesserte: jours, dureeEstimeeMin: dureeNb,
+        heureDepartMinutes: heureVersMinutes(heure),
+      },
       { onSuccess: () => setEdition(false) },
     );
   };
@@ -100,6 +135,9 @@ function LigneCarte({ ligne }: { ligne: Ligne }) {
             <ArrowRight size={13} style={{ flexShrink: 0 }} />
             <span>{ligne.destination.nom}</span>
             <span>{"·"} {dureeLisible(ligne.dureeEstimeeMin)}</span>
+            {ligne.heureDepartMinutes !== null && (
+              <span>{"·"} depart a {minutesVersHeure(ligne.heureDepartMinutes).replace(":", "h")}</span>
+            )}
           </div>
 
           <div style={{ fontSize: "12px", color: C.taupe, marginTop: "4px" }}>
@@ -145,6 +183,10 @@ function LigneCarte({ ligne }: { ligne: Ligne }) {
             />
           </Champ>
 
+          <Champ label="Heure de depart" aide={AIDE_HEURE}>
+            <ChampHeure valeur={heure} changer={setHeure} />
+          </Champ>
+
           <Erreur erreur={mutation.error} />
 
           <div className="flex gap-2">
@@ -169,6 +211,7 @@ function FormulaireLigne({ fermer }: { fermer: () => void }) {
   const [destinationId, setDestinationId] = useState("");
   const [jours, setJours] = useState<number[]>([]);
   const [duree, setDuree] = useState("");
+  const [heure, setHeure] = useState("");
 
   const dureeNb = Number(duree);
   const memePoint = origineId !== "" && origineId === destinationId;
@@ -184,6 +227,7 @@ function FormulaireLigne({ fermer }: { fermer: () => void }) {
         destinationId: Number(destinationId),
         joursDesserte: jours,
         dureeEstimeeMin: dureeNb,
+        heureDepartMinutes: heureVersMinutes(heure),
       },
       { onSuccess: fermer },
     );
@@ -236,6 +280,10 @@ function FormulaireLigne({ fermer }: { fermer: () => void }) {
             placeholder="300"
             style={{ ...styleSaisie, fontFamily: "var(--font-mono)" }}
           />
+        </Champ>
+
+        <Champ label="Heure de depart" aide={AIDE_HEURE}>
+          <ChampHeure valeur={heure} changer={setHeure} />
         </Champ>
 
         <Erreur erreur={mutation.error} />
