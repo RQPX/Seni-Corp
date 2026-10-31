@@ -14,6 +14,7 @@ import { statutConfig, LABELS_SERVICE } from "@/lib/statuts";
 import { formatDateFr, formatPoids } from "@/lib/utils";
 import { C } from "@/lib/tokens";
 import type { Colis } from "@/lib/api";
+import { Trajet } from "@/components/Trajet";
 
 // Icone de chaque statut. Les couleurs et libelles viennent de statutConfig.
 export const STATUT_ICONS: Record<string, typeof Clock> = {
@@ -51,9 +52,7 @@ export function StatutBadge({ statut }: { statut: string }) {
 
 export function ColisDetailPanel({ colis, onClose }: { colis: Colis; onClose: () => void }) {
   const lignes = [
-    { label: "Trajet",     value: `${colis.origine.ville} → ${colis.destination.ville}` },
-    { label: "Relais",     value: `${colis.origine.nom} → ${colis.destination.nom}` },
-    { label: "Date",       value: formatDateFr(colis.createdAt) },
+    { label: "Date",     value: formatDateFr(colis.createdAt) },
     { label: "Service",    value: LABELS_SERVICE[colis.service] },
     { label: "Poids",      value: formatPoids(colis.poidsGrammes) },
     { label: "Contenu",    value: colis.description ?? "Non specifie" },
@@ -124,6 +123,11 @@ export function ColisDetailPanel({ colis, onClose }: { colis: Colis; onClose: ()
                 <Copy size={16} />
               </button>
             </div>
+          </div>
+
+          {/* Trajet */}
+          <div className="rounded-xl" style={{ border: `1px solid ${C.border}`, padding: "14px 16px" }}>
+            <Trajet origine={colis.origine} destination={colis.destination} />
           </div>
 
           {/* Informations principales */}

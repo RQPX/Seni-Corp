@@ -11,6 +11,7 @@
 
 import { useState, useEffect } from "react";
 import { X, MapPin, Package, Phone, User, Clock, AlertCircle, Loader2, Check } from "lucide-react";
+import { Trajet } from "@/components/Trajet";
 import { ApiError, type EvenementColis } from "@/lib/api";
 import { statutConfig, LABELS_SERVICE, LABELS_PAIEMENT, type StatutColis } from "@/lib/statuts";
 import { useColisDetail, useChangerStatutColis, useUtilisateur } from "@/lib/queries";
@@ -372,14 +373,13 @@ export function ColisPanel({ colisId, fermer }: { colisId: number | null; fermer
 
           {colis && (
             <div className="space-y-6">
+              <section className="rounded-xl" style={{ border: `1px solid ${C.border}`, padding: "14px 16px" }}>
+                <Trajet origine={colis.origine} destination={colis.destination} />
+              </section>
+
               <section className="space-y-3">
                 <Ligne icone={User} label="Destinataire" valeur={colis.destinataireNom} />
                 <Ligne icone={Phone} label="Telephone" valeur={colis.destinataireTel} />
-                <Ligne
-                  icone={MapPin}
-                  label="Trajet"
-                  valeur={`${colis.origine.nom} (${colis.origine.ville}) vers ${colis.destination.nom} (${colis.destination.ville})`}
-                />
                 {colis.destinataireAdresse && (
                   <Ligne icone={MapPin} label="Adresse de livraison" valeur={colis.destinataireAdresse} />
                 )}
