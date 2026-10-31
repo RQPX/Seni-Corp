@@ -15,6 +15,11 @@ import {
   changerStatutCamion,
   changerStatutColis,
   creerCamion,
+  creerChauffeurAvecCompte,
+  creerUtilisateur,
+  definirActifUtilisateur,
+  getUtilisateurs,
+  modifierRoleUtilisateur,
   creerLigne,
   creerTournee,
   demarrerTournee,
@@ -35,9 +40,11 @@ import {
   terminerTournee,
   type ChangerStatutData,
   type ListeColisParams,
+  type ListeUtilisateursParams,
   type StatutCamion,
   type StatutTournee,
 } from '@/lib/api';
+import type { Role } from '@/lib/statuts';
 
 export const cles = {
   moi: ['auth', 'me'] as const,
@@ -50,6 +57,7 @@ export const cles = {
   tournees: ['tournees'] as const,
   tourneeDetail: (id: number) => ['tournees', 'detail', id] as const,
   statistiques: (depuis: string, jusqua: string) => ['statistiques', depuis, jusqua] as const,
+  utilisateurs: ['utilisateurs'] as const,
 };
 
 export function useUtilisateur() {
@@ -260,5 +268,51 @@ export function useModifierLigne() {
     }) =>
       modifierLigne(d.id, d),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: cles.lignes }),
+  });
+}
+
+export function useCreerChauffeurAvecCompte() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: creerChauffeurAvecCompte,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: cles.chauffeurs });
+      queryClient.invalidateQueries({ queryKey: cles.utilisateurs });
+    },
+  });
+}
+
+export function useUtilisateurs(params: ListeUtilisateursParams) {
+  return useQuery({
+    queryKey: [...cles.utilisateurs, params],
+    queryFn: () => getUtilisateurs(params),
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useCreerUtilisateur() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: creerUtilisateur,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: cles.utilisateurs }),
+  });
+}
+
+export function useModifierRoleUtilisateur() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (d: { id: number; role: Role }) => modifierRoleUtilisateur(d.id, d.role),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: cles.utilisateurs }),
+  });
+}
+
+export function useDefinirActifUtilisateur() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (d: { id: number; actif: boolean }) => definirActifUtilisateur(d.id, d.actif),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: cles.utilisateurs });
+      queryClient.invalidateQueries({ queryKey: cles.chauffeurs });
+    },
   });
 }

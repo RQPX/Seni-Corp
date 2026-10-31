@@ -1,18 +1,19 @@
 // ============================================================
 // Chauffeurs
 //
-// Un chauffeur est un profil de conduite pose sur un compte existant :
-// le compte, son mot de passe et sa politique viennent du module users.
-// Cet ecran gere donc le permis et l'activite, pas la creation de
-// comptes, qui n'aurait pas les memes regles si elle passait par ici.
+// Un chauffeur, c'est un compte de connexion plus un profil de conduite
+// (le permis). Le dispatch les cree ensemble, en une seule operation
+// cote serveur (POST /chauffeurs/avec-compte) : si le permis est refuse,
+// le compte n'est pas cree non plus. Le serveur fixe lui-meme le role.
 // ============================================================
 
 "use client";
 
 import { useState } from "react";
-import { CreditCard, Phone, AlertTriangle } from "lucide-react";
+import { CreditCard, Phone, AlertTriangle, Plus, Check } from "lucide-react";
 import type { Chauffeur } from "@/lib/api";
-import { useChauffeurs, useModifierChauffeur } from "@/lib/queries";
+import { useChauffeurs, useModifierChauffeur, useCreerChauffeurAvecCompte } from "@/lib/queries";
+import { ChampsCompte, IDENTITE_VIDE, identiteValide, identitePourEnvoi, type Identite } from "@/components/ChampsCompte";
 import {
   EnTetePage, Carte, Bouton, Champ, styleSaisie, Erreur, Chargement, Vide, Pastille, ReserveAu,
 } from "@/components/ui";
@@ -124,25 +125,103 @@ function LigneChauffeur({ chauffeur }: { chauffeur: Chauffeur }) {
   );
 }
 
+const demain = () => new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
+
+function FormulaireChauffeur({ fermer, cree }: { fermer: () => void; cree: (c: Chauffeur) => void }) {
+  const mutation = useCreerChauffeurAvecCompte();
+  const [identite, setIdentite] = useState<Identite>(IDENTITE_VIDE);
+  const [permis, setPermis] = useState("");
+  const [expiration, setExpiration] = useState("");
+
+  const permisValide = /^[A-Z0-9-]{4,30}$/.test(permis);
+  const valide = identiteValide(identite) && permisValide && expiration !== "" && expiration >= demain();
+
+  const envoyer = () => {
+    mutation.mutate(
+      { ...identitePourEnvoi(identite), numeroPermis: permis, permisExpireLe: expiration },
+      { onSuccess: (c) => { cree(c); fermer(); } },
+    );
+  };
+
+  return (
+    <Carte style={{ marginBottom: "16px", backgroundColor: C.ivory }}>
+      <div className="space-y-4">
+        <ChampsCompte valeur={identite} changer={setIdentite} />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4" style={{ borderTop: `1px solid ${C.border}`, paddingTop: "16px" }}>
+          <Champ label="Numero de permis" aide="Lettres, chiffres et tirets.">
+            <input
+              value={permis}
+              onChange={(e) => setPermis(e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 30))}
+              autoComplete="off"
+              style={{ ...styleSaisie, fontFamily: "var(--font-mono)" }}
+            />
+          </Champ>
+          <Champ label="Permis valable jusqu'au">
+            <input type="date" value={expiration} min={demain()} onChange={(e) => setExpiration(e.target.value)} style={styleSaisie} />
+          </Champ>
+        </div>
+
+        <Erreur erreur={mutation.error} />
+
+        <div className="flex gap-2">
+          <Bouton onClick={envoyer} disabled={!valide || mutation.isPending}>
+            {mutation.isPending ? "Creation" : "Creer le chauffeur"}
+          </Bouton>
+          <Bouton variante="secondaire" onClick={fermer}>Annuler</Bouton>
+        </div>
+      </div>
+    </Carte>
+  );
+}
+
+/** Confirmation apres creation, avec les coordonnees telles que le serveur les a enregistrees. */
+function ChauffeurCree({ chauffeur, fermer }: { chauffeur: Chauffeur; fermer: () => void }) {
+  return (
+    <div role="status" className="rounded-xl mb-4" style={{ backgroundColor: C.emeraldSoft, padding: "14px 16px" }}>
+      <div className="flex items-start gap-2">
+        <Check size={16} style={{ color: C.emerald, marginTop: "2px", flexShrink: 0 }} />
+        <div className="flex-1 min-w-0" style={{ fontSize: "13px", color: C.anthracite, lineHeight: 1.6 }}>
+          <strong>{chauffeur.user.prenom} {chauffeur.user.nom}</strong> peut maintenant se connecter avec
+          l&apos;email <span style={{ fontFamily: "var(--font-mono)" }}>{chauffeur.user.email}</span> et le mot
+          de passe que tu as choisi. Transmets-les lui directement.
+          <div style={{ color: C.taupe, fontSize: "12px" }}>Telephone enregistre : {chauffeur.user.telephone}</div>
+        </div>
+        <button onClick={fermer} aria-label="Fermer le message" style={{ background: "none", border: "none", color: C.taupe, cursor: "pointer", minWidth: "32px", minHeight: "32px" }}>
+          {"×"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function ContenuChauffeurs() {
   const { data, isLoading, error } = useChauffeurs();
   const chauffeurs = data?.elements ?? [];
   const actifs = chauffeurs.filter((c) => c.actif).length;
+  const [formulaire, setFormulaire] = useState(false);
+  const [dernier, setDernier] = useState<Chauffeur | null>(null);
 
   return (
     <div style={{ padding: "20px 16px 48px", maxWidth: "860px" }} className="md:px-8">
       <EnTetePage
         titre="Chauffeurs"
         soustitre={isLoading ? "Chargement" : `${chauffeurs.length} profils, ${actifs} actifs`}
+        action={!formulaire ? (
+          <Bouton onClick={() => { setFormulaire(true); setDernier(null); }}><Plus size={15} /> Chauffeur</Bouton>
+        ) : undefined}
       />
+
+      {dernier && <ChauffeurCree chauffeur={dernier} fermer={() => setDernier(null)} />}
+      {formulaire && <FormulaireChauffeur fermer={() => setFormulaire(false)} cree={setDernier} />}
 
       <Erreur erreur={error} repli="La liste des chauffeurs n'a pas pu etre chargee." />
       {isLoading && <Chargement texte="Chargement des chauffeurs" />}
 
-      {!isLoading && !error && chauffeurs.length === 0 && (
+      {!isLoading && !error && chauffeurs.length === 0 && !formulaire && (
         <Vide
-          titre="Aucun profil de chauffeur"
-          texte="Un profil se pose sur un compte deja cree. Cree d'abord le compte avec le role chauffeur, puis rattache-lui son permis."
+          titre="Aucun chauffeur"
+          texte="Cree un chauffeur avec son permis. Il pourra ensuite se connecter et etre affecte a des tournees."
         />
       )}
 

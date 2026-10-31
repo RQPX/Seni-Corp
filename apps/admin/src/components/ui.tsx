@@ -207,8 +207,10 @@ export function ReserveAu({ roles, children }: { roles: Role[]; children: ReactN
               Cet ecran ne releve pas de ton poste
             </p>
             <p style={{ fontSize: "13px", color: C.taupe, marginTop: "6px", lineHeight: 1.6 }}>
-              Il est reserve au dispatch et a l&apos;administration. Reviens aux
-              colis ou aux tournees depuis le menu.
+              {roles.length === 1 && roles[0] === "ADMIN"
+                ? "Il est reserve a l'administration."
+                : "Il est reserve au dispatch et a l'administration."}{" "}
+              Reviens aux colis ou aux tournees depuis le menu.
             </p>
           </div>
         </div>

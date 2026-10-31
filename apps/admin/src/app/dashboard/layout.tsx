@@ -13,7 +13,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  Package, Truck, Route as RouteIcon, Users, MapPin, BarChart3,
+  Package, Truck, Route as RouteIcon, Users, MapPin, BarChart3, UserCog,
   Menu, X, LogOut,
 } from "lucide-react";
 import type { Role } from "@/lib/statuts";
@@ -42,6 +42,8 @@ const NAVIGATION: Entree[] = [
     roles: ["DISPATCHER", "ADMIN"] },
   { href: "/dashboard/lignes", label: "Lignes", icon: MapPin, section: "Ressources",
     roles: ["DISPATCHER", "ADMIN"] },
+  { href: "/dashboard/utilisateurs", label: "Utilisateurs", icon: UserCog, section: "Administration",
+    roles: ["ADMIN"] },
 ];
 
 /** Libelle du poste, affiche sous le nom. */

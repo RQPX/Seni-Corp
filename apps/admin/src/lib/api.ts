@@ -782,18 +782,23 @@ export function modifierCamion(id: number, data: {
 }
 
 /**
- * Attache un profil de conduite a un compte DEJA cree.
+ * Cree le compte ET le profil de conduite en une seule transaction
+ * (POST /chauffeurs/avec-compte, dispatch et admin).
  *
- * Le compte, son mot de passe et sa politique viennent du module users :
- * un second chemin de creation de compte ici voudrait dire un chemin
- * sans ces regles.
+ * Le role n'est pas un champ : le serveur le force a CHAUFFEUR et refuse
+ * en 400 tout champ hors de cette liste, `role` compris. Ne rien ajouter.
+ * Le telephone revient normalise (+225...) : reafficher celui de la reponse.
  */
-export function creerChauffeur(data: {
-  userId: number;
+export function creerChauffeurAvecCompte(data: {
+  email: string;
+  motDePasse: string;
+  nom: string;
+  prenom: string;
+  telephone: string;
   numeroPermis: string;
   permisExpireLe: string;
 }): Promise<Chauffeur> {
-  return apiFetch('/chauffeurs', { method: 'POST', body: JSON.stringify(data) });
+  return apiFetch('/chauffeurs/avec-compte', { method: 'POST', body: JSON.stringify(data) });
 }
 
 export function modifierChauffeur(id: number, data: {
@@ -877,4 +882,62 @@ export interface StatistiquesReseau {
 /** `depuis` et `jusqua` au format AAAA-MM-JJ, bornes incluses, 366 jours au plus. */
 export function getStatistiquesReseau(depuis: string, jusqua: string): Promise<StatistiquesReseau> {
   return apiFetch(`/statistiques/reseau${query({ depuis, jusqua })}`);
+}
+
+// ============================================================
+// Comptes utilisateurs (administration uniquement)
+//
+// POST /users est le seul chemin qui attribue un role autre que CLIENT.
+// Regles du backend :
+// - pointRelaisId obligatoire pour un AGENT, interdit pour les autres ;
+// - un admin ne peut ni changer son propre role ni se desactiver ;
+// - il reste toujours au moins un admin actif.
+// ============================================================
+
+export interface Utilisateur {
+  id: number;
+  email: string;
+  nom: string;
+  prenom: string;
+  telephone: string;
+  role: Role;
+  actif: boolean;
+  derniereConnexion: string | null;
+  createdAt: string;
+  client: { id: number; typeClient: string; nomBoutique: string | null; ville: string | null; soldeCompte: number } | null;
+}
+
+export interface ListeUtilisateursParams {
+  role?: Role;
+  actif?: boolean;
+  recherche?: string;
+  page?: number;
+  parPage?: number;
+}
+
+export function getUtilisateurs(params: ListeUtilisateursParams = {}): Promise<Paginated<Utilisateur>> {
+  return apiFetch(`/users${query({ ...params })}`);
+}
+
+/** Roles internes que l'ecran sait creer. CHAUFFEUR passe par /chauffeurs/avec-compte. */
+export type RoleInterne = 'AGENT' | 'DISPATCHER' | 'ADMIN';
+
+export function creerUtilisateur(data: {
+  email: string;
+  motDePasse: string;
+  nom: string;
+  prenom: string;
+  telephone: string;
+  role: RoleInterne;
+  pointRelaisId?: number;
+}): Promise<Utilisateur> {
+  return apiFetch('/users', { method: 'POST', body: JSON.stringify(data) });
+}
+
+export function modifierRoleUtilisateur(id: number, role: Role): Promise<Utilisateur> {
+  return apiFetch(`/users/${id}/role`, { method: 'PATCH', body: JSON.stringify({ role }) });
+}
+
+export function definirActifUtilisateur(id: number, actif: boolean): Promise<Utilisateur> {
+  return apiFetch(`/users/${id}/${actif ? 'activer' : 'desactiver'}`, { method: 'PATCH' });
 }
