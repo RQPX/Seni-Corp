@@ -13,7 +13,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  Package, Truck, Route as RouteIcon, Users, MapPin,
+  Package, Truck, Route as RouteIcon, Users, MapPin, BarChart3,
   Menu, X, LogOut,
 } from "lucide-react";
 import type { Role } from "@/lib/statuts";
@@ -30,6 +30,8 @@ interface Entree {
 }
 
 const NAVIGATION: Entree[] = [
+  { href: "/dashboard/pilotage", label: "Pilotage", icon: BarChart3, section: "Direction",
+    roles: ["DISPATCHER", "ADMIN"] },
   { href: "/dashboard", label: "Colis", icon: Package, section: "Exploitation",
     roles: ["AGENT", "CHAUFFEUR", "DISPATCHER", "ADMIN"] },
   { href: "/dashboard/tournees", label: "Tournees", icon: RouteIcon, section: "Exploitation",

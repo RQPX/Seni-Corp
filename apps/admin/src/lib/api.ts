@@ -631,6 +631,8 @@ export interface Ligne {
   /** Convention ISO : 1 = lundi, 7 = dimanche. Vide = a la demande. */
   joursDesserte: number[];
   dureeEstimeeMin: number;
+  /** Minutes depuis minuit (420 = 07h00). null = pas d'horaire fixe. */
+  heureDepartMinutes: number | null;
   actif: boolean;
   origine: PointRelaisResume;
   destination: PointRelaisResume;
@@ -808,6 +810,7 @@ export function creerLigne(data: {
   destinationId: number;
   joursDesserte?: number[];
   dureeEstimeeMin: number;
+  heureDepartMinutes?: number | null;
 }): Promise<Ligne> {
   return apiFetch('/lignes', { method: 'POST', body: JSON.stringify(data) });
 }
@@ -816,7 +819,62 @@ export function modifierLigne(id: number, data: {
   libelle?: string;
   joursDesserte?: number[];
   dureeEstimeeMin?: number;
+  heureDepartMinutes?: number | null;
   actif?: boolean;
 }): Promise<Ligne> {
   return apiFetch(`/lignes/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
+}
+
+// ============================================================
+// Statistiques reseau (ecran de pilotage)
+//
+// Reserve au dispatch et a l'administration. Pieges de lecture, voir la
+// passation backend du 31/10/2026 :
+// - `pipeline` est l'etat du reseau MAINTENANT, il ignore la periode ;
+// - `auDepart` et `aLArrivee` ne s'additionnent jamais ;
+// - `colisLivres` se compte a la date de livraison, il peut depasser
+//   `colisCrees` ;
+// - le delai n'a de sens qu'avec `colisMesures` > 0.
+// Les taux sont des fractions entre 0 et 1, les montants des entiers XOF.
+// ============================================================
+
+export type ModePaiementStat = 'SOLDE' | 'CINETPAY' | 'COD';
+
+export interface StatistiquesReseau {
+  periode: { depuis: string; jusqua: string; jours: number };
+  volume: {
+    colisCrees: number;
+    colisLivres: number;
+    parJour: { date: string; crees: number; livres: number }[];
+  };
+  pipeline: { statut: StatutColis; nombre: number }[];
+  finances: {
+    chiffreAffaires: number;
+    encaisse: number;
+    aEncaisser: number;
+    parModePaiement: { mode: ModePaiementStat; nombre: number; montant: number }[];
+  };
+  qualite: {
+    delaiMoyenHeures: number;
+    delaiMedianHeures: number;
+    colisMesures: number;
+    tauxIncident: number;
+    tauxPerte: number;
+    tauxRetour: number;
+  };
+  agences: { pointRelaisId: number; nom: string; ville: string; auDepart: number; aLArrivee: number }[];
+  tournees: {
+    total: number;
+    terminees: number;
+    annulees: number;
+    tauxRemplissageMoyen: number;
+    partiesALHeure: number;
+    partiesEnRetard: number;
+  };
+  chauffeurs: { chauffeurId: number; nom: string; tournees: number; colisTransportes: number }[];
+}
+
+/** `depuis` et `jusqua` au format AAAA-MM-JJ, bornes incluses, 366 jours au plus. */
+export function getStatistiquesReseau(depuis: string, jusqua: string): Promise<StatistiquesReseau> {
+  return apiFetch(`/statistiques/reseau${query({ depuis, jusqua })}`);
 }
